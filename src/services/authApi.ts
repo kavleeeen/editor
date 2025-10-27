@@ -1,0 +1,116 @@
+const API_BASE_URL = 'http://localhost:3000/api/v1';
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  success: boolean;
+  message: string;
+  data: {
+    user: User;
+    token: string;
+  };
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  name: string;
+}
+
+export interface RegisterResponse {
+  success: boolean;
+  message: string;
+  data: {
+    user: User;
+    token: string;
+  };
+}
+
+export interface AuthErrorResponse {
+  success: false;
+  error: string;
+  message: string;
+}
+
+/**
+ * Register a new user
+ */
+export const register = async (request: RegisterRequest): Promise<RegisterResponse> => {
+  const response = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error((data as AuthErrorResponse).message || 'Registration failed');
+  }
+
+  // Store token in localStorage
+  if (data.success && data.data.token) {
+    localStorage.setItem('authToken', data.data.token);
+  }
+
+  return data as RegisterResponse;
+};
+
+/**
+ * Login an existing user
+ */
+export const login = async (request: LoginRequest): Promise<LoginResponse> => {
+  const response = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error((data as AuthErrorResponse).message || 'Login failed');
+  }
+
+  // Store token in localStorage
+  if (data.success && data.data.token) {
+    localStorage.setItem('authToken', data.data.token);
+  }
+
+  return data as LoginResponse;
+};
+
+/**
+ * Get the stored authentication token
+ */
+export const getAuthToken = (): string | null => {
+  return localStorage.getItem('authToken');
+};
+
+/**
+ * Remove the authentication token (logout)
+ */
+export const removeAuthToken = (): void => {
+  localStorage.removeItem('authToken');
+};
+
+/**
+ * Check if user is authenticated
+ */
+export const isAuthenticated = (): boolean => {
+  return !!getAuthToken();
+};
+

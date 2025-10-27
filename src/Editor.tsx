@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, Navigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
-import { v4 as uuidv4 } from 'uuid'
 import Canvas from './components/Canvas/Canvas'
 import Sidebar from './components/Sidebar/Sidebar'
 import ElementToolbar from './components/ElementToolbar/ElementToolbar'
@@ -13,24 +12,25 @@ import LayersPanel from './components/LayersPanel/LayersPanel'
 import UndoRedoToolbar from './components/UndoRedoToolbar/UndoRedoToolbar'
 import Loader from './components/Loader/Loader'
 import { updateSelectedElementColor } from './store/canvasSlice'
-import { loadCanvas } from './services/canvasApi'
+import { loadCanvas, updateCanvas } from './services/canvasApi'
 import type { RootState } from './store/store'
 import { colors } from './constants/colors'
-import './App.css'
+import './Editor.css'
 
 type PanelType = 'font' | 'color' | 'shapes' | null
 
-function App() {
+function Editor() {
   const [activePanel, setActivePanel] = useState<PanelType>(null)
   const [isLoadingCanvas, setIsLoadingCanvas] = useState(true)
   const selectedElement = useSelector((state: RootState) => state.canvas.selectedElement)
   const canvasWrapperRef = useRef<HTMLDivElement>(null)
+  const lastSavedDataRef = useRef<string>('')
   const dispatch = useDispatch()
   const { id } = useParams<{ id: string }>()
 
   // Redirect to dashboard if no ID (this should not happen with proper routing)
   if (!id) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/dashboard" replace />
   }
 
   const handleFontClick = () => setActivePanel('font')
@@ -55,7 +55,10 @@ function App() {
       try {
         const result = await loadCanvas(id);
 
-        if (result.success && result.data?.designData) {
+        // Check if canvas has any objects to load
+        const hasObjects = result.data?.designData?.objects?.length > 0;
+
+        if (hasObjects) {
           // Wait for canvas to be initialized
           const waitForCanvas = () => {
             const canvas = (window as any).fabricCanvas;
@@ -88,6 +91,7 @@ function App() {
               }, (fabricObjects: any, error: any) => {
                 if (error) {
                   console.error('❌ Error loading canvas objects:', error);
+                  setIsLoadingCanvas(false);
                 } else {
                   console.log('📦 Objects loaded:', fabricObjects?.length);
                 }
@@ -101,7 +105,20 @@ function App() {
 
           waitForCanvas();
         } else {
-          setIsLoadingCanvas(false);
+          // No objects to load, just wait for canvas to be ready
+          console.log('ℹ️ Blank canvas - no objects to load');
+          const waitForCanvas = () => {
+            const canvas = (window as any).fabricCanvas;
+            const canvasReady = (window as any).canvasReady;
+
+            if (canvas && canvasReady) {
+              console.log('✅ Canvas ready');
+              setIsLoadingCanvas(false);
+            } else {
+              setTimeout(waitForCanvas, 50);
+            }
+          };
+          waitForCanvas();
         }
       } catch (error: any) {
         if (error.message && error.message.includes('404')) {
@@ -120,6 +137,62 @@ function App() {
 
     return () => clearTimeout(timeout);
   }, [id]);
+
+  // Autosave canvas every 30 seconds (only if data changed)
+  useEffect(() => {
+    if (!id) return;
+
+    const autosave = async () => {
+      const canvas = (window as any).fabricCanvas;
+      if (!canvas) return;
+
+      try {
+        const designData = canvas.toJSON();
+        designData.width = canvas.getWidth();
+        designData.height = canvas.getHeight();
+
+        // Serialize current data to compare
+        const currentDataString = JSON.stringify(designData);
+
+        // Only save if data has changed
+        if (currentDataString === lastSavedDataRef.current) {
+          console.log('ℹ️ No changes detected, skipping autosave');
+          return;
+        }
+
+        await updateCanvas(id, {
+          designData,
+          metadata: {
+            title: 'My Design'
+          }
+        });
+
+        // Update last saved data
+        lastSavedDataRef.current = currentDataString;
+        console.log('💾 Autosave completed at', new Date().toLocaleTimeString());
+      } catch (error) {
+        console.error('❌ Autosave error:', error);
+      }
+    };
+
+    // Start autosave interval
+    const autosaveInterval = setInterval(autosave, 10000); // 30 seconds
+
+    return () => {
+      clearInterval(autosaveInterval);
+    };
+  }, [id]);
+
+  // Update last saved data reference after initial load
+  useEffect(() => {
+    const canvas = (window as any).fabricCanvas;
+    if (canvas) {
+      const designData = canvas.toJSON();
+      designData.width = canvas.getWidth();
+      designData.height = canvas.getHeight();
+      lastSavedDataRef.current = JSON.stringify(designData);
+    }
+  }, [isLoadingCanvas]);
 
   // Auto-scale canvas to fit viewport
   useEffect(() => {
@@ -151,7 +224,6 @@ function App() {
       window.removeEventListener('resize', updateCanvasScale)
     }
   }, [])
-
 
   return (
     <div className="app">
@@ -238,4 +310,4 @@ function App() {
   )
 }
 
-export default App
+export default Editor

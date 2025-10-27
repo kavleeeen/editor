@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { v4 as uuidv4 } from 'uuid';
 import { BsFileText } from 'react-icons/bs';
-import { listCanvases, type CanvasListItem } from '../../services/canvasApi';
+import { listCanvases, createBlankCanvas, type CanvasListItem } from '../../services/canvasApi';
+import { removeAuthToken } from '../../services/authApi';
 import Loader from '../Loader/Loader';
 import './Dashboard.css';
 
 const Dashboard = () => {
   const [canvases, setCanvases] = useState<CanvasListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,13 +30,28 @@ const Dashboard = () => {
     fetchCanvases();
   }, []);
 
-  const handleCreateNew = () => {
-    const newId = uuidv4();
-    navigate(`/editor/${newId}`);
+  const handleCreateNew = async () => {
+    setIsCreating(true);
+    try {
+      const response = await createBlankCanvas('Untitled Design');
+      if (response.success && response.data.id) {
+        navigate(`/editor/${response.data.id}`);
+      }
+    } catch (error) {
+      console.error('Error creating canvas:', error);
+      alert('Failed to create new design. Please try again.');
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleCanvasClick = (id: string) => {
     navigate(`/editor/${id}`);
+  };
+
+  const handleLogout = () => {
+    removeAuthToken();
+    window.location.href = '/'; // Redirect to home/login
   };
 
   const formatDate = (dateString?: string) => {
@@ -54,9 +70,20 @@ const Dashboard = () => {
     <div className="dashboard">
       <div className="dashboard-header">
         <h1 className="dashboard-title">My Designs</h1>
-        <button className="create-new-btn" onClick={handleCreateNew}>
-          + Create New Design
-        </button>
+        <div className="dashboard-actions">
+          <button className="logout-btn" onClick={handleLogout}>
+            Logout
+          </button>
+          <button
+            className="create-new-btn"
+            onClick={handleCreateNew}
+            disabled={isCreating}
+          >
+            {isCreating ? 'Creating...' : '+ Create New Design'}
+          </button>
+        </div>
+
+
       </div>
 
       <div className="dashboard-content">
@@ -67,8 +94,12 @@ const Dashboard = () => {
             <BsFileText className="empty-icon" />
             <h3>No designs yet</h3>
             <p>Create your first design to get started!</p>
-            <button className="create-first-btn" onClick={handleCreateNew}>
-              Create New Design
+              <button
+                className="create-first-btn"
+                onClick={handleCreateNew}
+                disabled={isCreating}
+              >
+                {isCreating ? 'Creating...' : 'Create New Design'}
             </button>
           </div>
         ) : (

@@ -1,5 +1,17 @@
 const API_BASE_URL = 'http://localhost:3000/api/v1';
 
+// Helper to get auth headers
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('authToken');
+  if (!token) {
+    throw new Error('Authentication required. Please login.');
+  }
+  return {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+};
+
 export interface SaveCanvasRequest {
   designData: {
     version: string;
@@ -39,20 +51,64 @@ export interface SaveCanvasResponse {
   };
 }
 
+export interface CreateCanvasRequest {
+  metadata?: {
+    title?: string;
+  };
+}
+
+export interface CreateCanvasResponse {
+  success: boolean;
+  message: string;
+  data: {
+    id: string;
+    designData: {
+      version: string;
+      objects: any[];
+      background: string;
+    };
+    metadata?: {
+      title?: string;
+      version?: string;
+      createdAt?: string;
+      updatedAt?: string;
+    };
+  };
+}
+
 /**
- * Save canvas design to backend
+ * Create a new blank canvas
  */
-export const saveCanvas = async (id: string, request: SaveCanvasRequest): Promise<SaveCanvasResponse> => {
-  const response = await fetch(`${API_BASE_URL}/canvas/${id}/save`, {
+export const createBlankCanvas = async (title?: string): Promise<CreateCanvasResponse> => {
+  const headers = getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/canvas`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
+    body: JSON.stringify({
+      metadata: title ? { title } : undefined,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to create canvas: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+/**
+ * Update canvas design (PATCH)
+ */
+export const updateCanvas = async (id: string, request: SaveCanvasRequest): Promise<SaveCanvasResponse> => {
+  const headers = getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/canvas/${id}`, {
+    method: 'PATCH',
+    headers,
     body: JSON.stringify(request),
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to save canvas: ${response.statusText}`);
+    throw new Error(`Failed to update canvas: ${response.statusText}`);
   }
 
   return response.json();
@@ -62,7 +118,10 @@ export const saveCanvas = async (id: string, request: SaveCanvasRequest): Promis
  * Load canvas design from backend
  */
 export const loadCanvas = async (id: string): Promise<GetCanvasResponse> => {
-  const response = await fetch(`${API_BASE_URL}/canvas/${id}`);
+  const headers = getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/canvas/${id}`, {
+    headers,
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to load canvas: ${response.statusText}`);
@@ -98,7 +157,10 @@ export interface ListCanvasesResponse {
  * List all canvas designs
  */
 export const listCanvases = async (limit = 50, offset = 0): Promise<ListCanvasesResponse> => {
-  const response = await fetch(`${API_BASE_URL}/canvas?limit=${limit}&offset=${offset}`);
+  const headers = getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/canvas?limit=${limit}&offset=${offset}`, {
+    headers,
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to list canvases: ${response.statusText}`);
