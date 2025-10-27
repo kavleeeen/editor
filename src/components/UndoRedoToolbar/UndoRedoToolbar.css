@@ -1,0 +1,87 @@
+.undo-redo-toolbar {
+  position: fixed;
+  top: 10px;
+  right: 320px;
+  display: flex;
+  gap: 6px;
+  z-index: 1000;
+}
+
+.undo-redo-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-border-default);
+  background: var(--color-bg-white);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  color: var(--color-text-dark);
+  padding: 0;
+}
+
+.undo-redo-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.undo-redo-btn:hover:not(:disabled) {
+  background: var(--color-bg-main);
+  border-color: var(--color-primary);
+}
+
+.undo-redo-btn:active:not(:disabled) {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.undo-redo-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.save-btn {
+  /* Save button styling if needed */
+}
+
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* Adjust position when panel is open */
+.app .canvas-viewport.with-panel~.undo-redo-toolbar {
+  right: 620px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+  .undo-redo-toolbar {
+    right: 220px;
+  }
+
+  .app .canvas-viewport.with-panel~.undo-redo-toolbar {
+    right: 520px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .undo-redo-toolbar {
+    right: 190px;
+  }
+
+  .app .canvas-viewport.with-panel~.undo-redo-toolbar {
+    right: 490px;
+  }
+}

@@ -1,3 +1,4 @@
+@import './constants/colors.css';
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -5,7 +6,7 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: var(--color-bg-dark);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -15,19 +16,18 @@
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: var(--color-text-link);
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: var(--color-text-link-hover);
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background: var(--color-bg-canvas);
 }
 
 h1 {
@@ -42,27 +42,46 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--color-bg-very-dark);
   cursor: pointer;
   transition: border-color 0.25s;
 }
 button:hover {
-  border-color: #646cff;
+  border-color: var(--color-text-link);
 }
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* Loading spinner */
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border-sidebar);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    color: var(--color-text-very-dark);
+      background-color: var(--color-bg-white);
   }
   a:hover {
-    color: #747bff;
+    color: var(--color-text-link-light);
   }
   button {
-    background-color: #f9f9f9;
+    background-color: var(--color-bg-light);
   }
 }

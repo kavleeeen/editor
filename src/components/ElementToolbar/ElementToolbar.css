@@ -1,0 +1,142 @@
+.element-toolbar {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border: 1px solid var(--color-border-default);
+  border-radius: 8px;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  white-space: nowrap;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 4px;
+  border-right: 1px solid var(--color-border-sidebar);
+}
+
+.toolbar-group:last-child {
+  border-right: none;
+}
+
+.toolbar-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--color-border-default);
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-dark);
+}
+
+.toolbar-btn svg {
+  color: var(--color-text-dark);
+}
+.color-picker-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.color-picker-btn svg {
+  color: white;
+  position: relative;
+  z-index: 1;
+}
+.toolbar-btn strong,
+.toolbar-btn em {
+  font-weight: normal;
+  font-style: normal;
+}
+
+.toolbar-btn:hover:not(:disabled):not(.active) {
+  background: var(--color-bg-main);
+}
+
+.toolbar-btn:disabled,
+.font-size-input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.toolbar-btn.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  opacity: 1;
+  }
+  
+  .toolbar-btn.active:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+      border-color: var(--color-primary-hover);
+  }
+  
+  .toolbar-btn.active-muted {
+    background: var(--color-bg-light-gray);
+      color: var(--color-text-dark);
+      border-color: var(--color-border-medium);
+    opacity: 1;
+  }
+  
+  .toolbar-btn.active-muted:hover:not(:disabled) {
+    background: var(--color-border-sidebar);
+      border-color: var(--color-border-light);
+}
+
+.toolbar-btn.icon {
+  min-width: 28px;
+  padding: 4px 6px;
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--color-text-medium);
+}
+
+.font-size-input {
+  width: 45px;
+  padding: 4px 6px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 4px;
+  text-align: center;
+  font-size: 13px;
+}
+
+.font-select {
+  padding: 4px 8px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 4px;
+  font-size: 13px;
+  background: white;
+  cursor: pointer;
+  color: var(--color-text-dark);
+  min-width: 150px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23333' d='M10.293 3.293L6 7.586 1.707 3.293A1 1 0 00.293 4.707l5 5a1 1 0 001.414 0l5-5a1 1 0 10-1.414-1.414z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 30px;
+}
+
+.font-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.color-picker {
+  width: 36px;
+  height: 24px;
+  border: 1px solid var(--color-border-default);
+  border-radius: 4px;
+  cursor: pointer;
+}

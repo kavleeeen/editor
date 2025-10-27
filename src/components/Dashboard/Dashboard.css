@@ -1,0 +1,145 @@
+.dashboard {
+  min-height: 100vh;
+  background: var(--color-bg-dark);
+  padding: 20px 30px;
+}
+
+.dashboard-header {
+  max-width: 1400px;
+  margin: 0 auto 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dashboard-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-white);
+  margin: 0;
+}
+
+.create-new-btn {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.create-new-btn:hover {
+  background: var(--color-primary-hover);
+}
+
+.dashboard-content {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.dashboard-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: var(--color-text-medium);
+}
+
+.dashboard-empty .empty-icon {
+  font-size: 80px;
+  margin-bottom: 20px;
+  color: var(--color-text-dark);
+}
+
+.dashboard-empty h3 {
+  color: var(--color-white);
+  font-size: 24px;
+  margin: 0 0 10px 0;
+}
+
+.dashboard-empty p {
+  color: var(--color-text-medium);
+  margin-bottom: 30px;
+}
+
+.create-first-btn {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  padding: 14px 28px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.create-first-btn:hover {
+  background: var(--color-primary-hover);
+}
+
+.canvas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.canvas-card {
+  background: var(--color-bg-very-dark);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid var(--color-border-sidebar);
+}
+
+.canvas-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.canvas-card-preview {
+  width: 100%;
+  height: 160px;
+  background: var(--color-bg-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.canvas-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 72px;
+  font-weight: 700;
+  color: var(--color-text-medium);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-success) 100%);
+  opacity: 0.3;
+}
+
+.canvas-card-info {
+  padding: 14px;
+}
+
+.canvas-card-title {
+  color: var(--color-white);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 6px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.canvas-card-date {
+  color: var(--color-text-medium);
+  font-size: 12px;
+  margin: 0;
+}

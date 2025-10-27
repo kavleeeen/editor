@@ -1,5 +1,68 @@
 .app {
+  background-color: var(--color-bg-canvas) !important;
   width: 100%;
   min-height: 100vh;
-  background: #f5f5f5;
-}
+  display: flex;
+    place-items: center;
+  background: var(--color-bg-main);
+    min-width: 900px;
+    /* Minimum screen width */
+  }
+  
+  .canvas-viewport {
+    width: calc(100% - 500px);
+    /* 200px left + 300px right */
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-canvas);
+    overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 200px;
+    right: 300px;
+    transition: left 0.3s ease, width 0.3s ease;
+    padding-top: 50px;
+      box-sizing: border-box;
+  }
+  
+  /* When panel is open, shift canvas to the right */
+  .canvas-viewport.with-panel {
+    left: 500px;
+    /* 200px sidebar + 300px panel */
+    width: calc(100% - 800px);
+    /* 200px sidebar + 300px panel + 300px right */
+  }
+  
+  /* Responsive panels on smaller screens */
+  @media (max-width: 1200px) {
+    .canvas-viewport {
+      width: calc(100% - 350px);
+      /* 150px left + 200px right */
+      left: 150px;
+      right: 200px;
+    }
+  
+    .canvas-viewport.with-panel {
+      left: 450px;
+      /* 150px sidebar + 300px panel */
+      width: calc(100% - 650px);
+      /* 150px sidebar + 300px panel + 200px right */
+    }
+  }
+    @media (max-width: 1000px) {
+      .canvas-viewport {
+        width: calc(100% - 300px);
+        /* 120px left + 180px right */
+        left: 120px;
+        right: 180px;
+      }
+  
+      .canvas-viewport.with-panel {
+        left: 420px;
+        /* 120px sidebar + 300px panel */
+        width: calc(100% - 600px);
+        /* 120px sidebar + 300px panel + 180px right */
+      }
+    }

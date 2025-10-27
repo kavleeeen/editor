@@ -1,0 +1,57 @@
+:root {
+  /* Primary colors */
+  --color-primary: #2196F3;
+  --color-primary-hover: #0b7dda;
+  --color-success: #4CAF50;
+  --color-success-hover: #45a049;
+
+  /* Background colors */
+  --color-bg-main: #f5f5f5;
+  --color-bg-sidebar: #f8f9fa;
+  --color-bg-selected: #e8f4fd;
+  --color-bg-hover: #e8e8e8;
+  --color-bg-white: #ffffff;
+  --color-bg-canvas: #2a2a2a;
+    --color-bg-dark: #242424;
+    --color-bg-very-dark: #1a1a1a;
+    --color-bg-light: #f9f9f9;
+    --color-bg-light-gray: #f0f0f0;
+
+  /* Border colors */
+  --color-border-default: #ddd;
+  --color-border-sidebar: #e0e0e0;
+  --color-border-hover: #999;
+  --color-border-light: #c0c0c0;
+    --color-border-medium: #d0d0d0;
+
+  /* Text colors */
+  --color-text-dark: #333;
+  --color-text-medium: #666;
+  --color-text-link: #646cff;
+    --color-text-link-hover: #535bf2;
+    --color-text-link-light: #747bff;
+    --color-text-very-dark: #213547;
+  
+    /* Basic colors */
+    --color-black: #000000;
+    --color-white: #ffffff;
+  
+    /* Error/Danger colors */
+    --color-error: #f44336;
+    --color-error-hover: #d32f2f;
+  
+    /* Shape colors */
+    --color-shape-fill: #4CAF50;
+    --color-shape-stroke: #2E7D32;
+
+  /* Selection colors (for canvas) */
+  --color-selection-border: #4CAF50;
+  --color-selection-bg: rgba(100, 181, 246, 0.2);
+/* Color picker colors */
+  --color-red: #ff0000;
+  --color-yellow: #ffff00;
+  --color-green: #00ff00;
+  --color-cyan: #00ffff;
+  --color-blue: #0000ff;
+  --color-magenta: #ff00ff;
+}

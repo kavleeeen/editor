@@ -1,0 +1,115 @@
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  backdrop-filter: blur(5px);
+}
+
+.loading-container {
+  text-align: center;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.loading-title {
+  font-size: 24px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #2196F3 0%, #4CAF50 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 20px 0 8px 0;
+  letter-spacing: 0.5px;
+}
+
+.loading-text {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.modern-spinner {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto;
+}
+
+.spinner-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 4px solid transparent;
+  border-radius: 50%;
+  animation: ring-spin 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+}
+
+.spinner-ring:nth-child(1) {
+  background: conic-gradient(from 0deg,
+      #2196F3,
+      #4CAF50,
+      #FFC107,
+      #2196F3);
+  -webkit-mask: radial-gradient(farthest-side, transparent 70%, white 70%);
+  mask: radial-gradient(farthest-side, transparent 70%, white 70%);
+  animation-delay: 0s;
+}
+
+.spinner-ring:nth-child(2) {
+  background: conic-gradient(from 120deg,
+      #FF9800,
+      #E91E63,
+      #9C27B0,
+      #FF9800);
+  -webkit-mask: radial-gradient(farthest-side, transparent 76%, white 76%);
+  mask: radial-gradient(farthest-side, transparent 76%, white 76%);
+  animation-delay: 0.2s;
+  animation-duration: 1.8s;
+}
+
+.spinner-ring:nth-child(3) {
+  background: conic-gradient(from 240deg,
+      #00BCD4,
+      #8BC34A,
+      #CDDC39,
+      #00BCD4);
+  -webkit-mask: radial-gradient(farthest-side, transparent 82%, white 82%);
+  mask: radial-gradient(farthest-side, transparent 82%, white 82%);
+  animation-delay: 0.4s;
+  animation-duration: 2s;
+}
+
+@keyframes ring-spin {
+  0% {
+    transform: rotate(0deg);
+    border-width: 4px;
+  }
+
+  50% {
+    transform: rotate(180deg);
+    border-width: 8px;
+  }
+
+  100% {
+    transform: rotate(360deg);
+    border-width: 4px;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
