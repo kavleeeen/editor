@@ -12,7 +12,7 @@ interface SidebarProps {
   canvasTitle?: string;
 }
 
-const Sidebar = ({ onShapesClick, canvasId, canvasTitle }: SidebarProps) => {
+const Sidebar = ({ onShapesClick, canvasTitle }: SidebarProps) => {
   const dispatch = useDispatch();
   const addText = () => {
     const canvas = (window as any).fabricCanvas as ExtendedCanvas;

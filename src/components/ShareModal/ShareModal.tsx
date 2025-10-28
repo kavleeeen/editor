@@ -9,8 +9,7 @@ import {
   setShareModalLoading,
   setShareModalSharing,
   setShareModalError,
-  toggleSelectedUser,
-  setSelectedRole
+  toggleSelectedUser
 } from '../../store/canvasSlice';
 import type { RootState } from '../../store/store';
 import './ShareModal.css';
