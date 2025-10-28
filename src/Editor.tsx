@@ -31,6 +31,7 @@ function Editor() {
   const [isEditingTitle, setIsEditingTitle] = useState<boolean>(false)
   const titleInputRef = useRef<HTMLInputElement | null>(null)
   const [connectedPeers, setConnectedPeers] = useState<{ id: string; name: string; initials: string }[]>([])
+  const [titleEditingPeers, setTitleEditingPeers] = useState<{ id: string; name: string; initials: string }[]>([])
   const selectedElement = useSelector(selectSelectedElement)
   const activePanel = useSelector(selectActivePanel)
   const canvasWrapperRef = useRef<HTMLDivElement>(null)
@@ -111,6 +112,20 @@ function Editor() {
         ; (designData as any).width = canvas.getWidth()
         ; (designData as any).height = canvas.getHeight()
 
+      // Sync title through Yjs first
+      const ydoc = (window as any).ydoc
+      if (ydoc) {
+        const yShared = ydoc.getMap('shared-canvas')
+        const senderId = ydoc.clientID
+        const senderTs = Date.now()
+        ydoc.transact(() => {
+          yShared.set('title', canvasTitle || 'Untitled')
+          yShared.set('titleSenderId', senderId)
+          yShared.set('titleSenderTs', senderTs)
+        }, { source: 'title-sync', clientId: senderId })
+        console.log('📝 Title synced through Yjs:', canvasTitle)
+      }
+
       // Convert canvas to PNG and upload it
       let imageUrl: string | undefined
       try {
@@ -143,6 +158,24 @@ function Editor() {
       clearTimeout(autoSaveTimeoutRef.current)
     }
     autoSaveTimeoutRef.current = setTimeout(performAutoSave, 2500) // 3.5 seconds
+  }
+
+  // Helper functions for title editing awareness
+  const updateTitleEditingState = (editing: boolean) => {
+    const awareness = (window as any).awareness
+    if (awareness) {
+      awareness.setLocalStateField('editingTitle', editing)
+    }
+  }
+
+  const handleTitleEditStart = () => {
+    setIsEditingTitle(true)
+    updateTitleEditingState(true)
+  }
+
+  const handleTitleEditEnd = () => {
+    setIsEditingTitle(false)
+    updateTitleEditingState(false)
   }
 
   // Focus title input when entering edit mode
@@ -213,6 +246,9 @@ function Editor() {
       initials: myInits
     })
 
+    // Track title editing state
+    awareness.setLocalStateField('editingTitle', false)
+
     const handleAwarenessChange = () => {
       try {
         const statesMap: Map<number, any> = awareness.getStates()
@@ -228,6 +264,20 @@ function Editor() {
             }
           })
         setConnectedPeers(peers)
+
+        // Track peers editing the title
+        const titleEditingPeers = Array.from(statesMap.entries())
+          .filter(([clientId]) => clientId !== selfClientId)
+          .filter(([, state]) => state?.editingTitle === true)
+          .map(([, state]) => {
+            const u = state?.user || {}
+            return {
+              id: u.id || '',
+              name: u.name || 'Guest',
+              initials: (u.initials || computeInitials(u.name, u.email) || '??') as string
+            }
+          })
+        setTitleEditingPeers(titleEditingPeers)
       } catch { /* noop */ }
     }
 
@@ -235,6 +285,23 @@ function Editor() {
     handleAwarenessChange()
 
     const yShared = ydoc.getMap('shared-canvas')
+
+    // Handle title synchronization
+    const handleTitleSync = () => {
+      try {
+        const sharedTitle = yShared.get('title') as string | undefined
+        const titleSenderId = yShared.get('titleSenderId') as number | undefined
+        const myId = (window as any).ydoc?.clientID as number | undefined
+
+        // Only update if the title came from another user and is different
+        if (sharedTitle && titleSenderId && myId && titleSenderId !== myId && sharedTitle !== canvasTitle) {
+          setCanvasTitle(sharedTitle)
+          console.log('📝 Title synced from peer:', sharedTitle)
+        }
+      } catch (e) {
+        console.warn('⚠️ Failed to sync title:', e)
+      }
+    }
 
     const applyInbound = () => {
       try {
@@ -283,15 +350,22 @@ function Editor() {
 
     // Initial apply if present
     applyInbound()
+    // Initial title sync
+    handleTitleSync()
+
     // Observe updates
     const observer = () => applyInbound()
+    const titleObserver = () => handleTitleSync()
     yShared.observe(observer)
+    yShared.observe(titleObserver)
 
-      // Expose ydoc globally for Canvas to use
+      // Expose ydoc and awareness globally for Canvas and title editing to use
       ; (window as any).ydoc = ydoc
+      ; (window as any).awareness = awareness
 
     return () => {
       yShared.unobserve(observer)
+      yShared.unobserve(titleObserver)
       awareness.off('change', handleAwarenessChange)
       provider.destroy()
       ydoc.destroy()
@@ -673,53 +747,128 @@ function Editor() {
 
           {/* Inline title: click to edit */}
           {isEditingTitle ? (
-            <input
-              ref={titleInputRef}
-              value={canvasTitle}
-              onChange={(e) => setCanvasTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+            <div style={{ position: 'relative' }}>
+              <input
+                ref={titleInputRef}
+                value={canvasTitle}
+                onChange={(e) => setCanvasTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    saveTitle()
+                    handleTitleEditEnd()
+                  } else if (e.key === 'Escape') {
+                    handleTitleEditEnd()
+                  }
+                }}
+                onBlur={() => {
                   saveTitle()
-                  setIsEditingTitle(false)
-                } else if (e.key === 'Escape') {
-                  setIsEditingTitle(false)
-                }
-              }}
-              onBlur={() => {
-                saveTitle()
-                setIsEditingTitle(false)
-              }}
-              placeholder="Untitled"
-              style={{
-                border: '1px solid #e5e7eb',
-                height: 32,
-                borderRadius: 6,
-                padding: '0 10px',
-                fontSize: 16,
-                width: 260
-              }}
-            />
+                  handleTitleEditEnd()
+                }}
+                placeholder="Untitled"
+                style={{
+                  border: '1px solid #e5e7eb',
+                  height: 32,
+                  borderRadius: 6,
+                  padding: '0 10px',
+                  fontSize: 16,
+                  width: 260
+                }}
+              />
+              {/* Show other users editing the title */}
+              {titleEditingPeers.length > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: -8,
+                  right: -8,
+                  display: 'flex',
+                  gap: '2px'
+                }}>
+                  {titleEditingPeers.map((peer) => (
+                    <div
+                      key={peer.id}
+                      title={`${peer.name} is editing the title`}
+                      style={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: '50%',
+                        background: getPeerColor(peer.id),
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 8,
+                        fontWeight: 600,
+                        color: '#333',
+                        border: '1px solid #fff',
+                        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+                      }}
+                    >
+                      {peer.initials}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           ) : (
-            <div
-              title="Click to edit"
-              onClick={() => setIsEditingTitle(true)}
-              style={{
-                height: 32,
-                display: 'flex',
-                alignItems: 'center',
-                padding: '0 10px',
-                borderRadius: 6,
-                fontSize: 16,
-                cursor: 'text',
-                minWidth: 120,
-                maxWidth: 360,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                color: '#1f2937'
-              }}
-            >
-              {canvasTitle || 'Untitled'}
+              <div style={{ position: 'relative' }}>
+                <div
+                  title={titleEditingPeers.length > 0 ? `${titleEditingPeers.map(p => p.name).join(', ')} is editing the title` : "Click to edit"}
+                  onClick={() => {
+                    if (titleEditingPeers.length === 0) {
+                      handleTitleEditStart()
+                    }
+                  }}
+                  style={{
+                    height: 32,
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0 10px',
+                    borderRadius: 6,
+                    fontSize: 16,
+                  cursor: titleEditingPeers.length > 0 ? 'not-allowed' : 'text',
+                  minWidth: 120,
+                  maxWidth: 360,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                    color: titleEditingPeers.length > 0 ? '#9ca3af' : '#1f2937',
+                    opacity: titleEditingPeers.length > 0 ? 0.7 : 1
+                  }}
+                >
+                  {canvasTitle || 'Untitled'}
+                </div>
+                {/* Show other users editing the title */}
+                {titleEditingPeers.length > 0 && (
+                  <div style={{
+                    position: 'absolute',
+                    top: -8,
+                    right: -8,
+                    display: 'flex',
+                    gap: '2px'
+                  }}>
+                    {titleEditingPeers.map((peer) => (
+                      <div
+                        key={peer.id}
+                        title={`${peer.name} is editing the title`}
+                        style={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: '50%',
+                          background: getPeerColor(peer.id),
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 8,
+                          fontWeight: 600,
+                          color: '#333',
+                          border: '1px solid #fff',
+                          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+                        }}
+                      >
+                        {peer.initials}
+                      </div>
+                    ))}
+                  </div>
+                )}
             </div>
           )}
         </div>
