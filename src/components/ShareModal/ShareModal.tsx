@@ -1,17 +1,17 @@
 import React, { useEffect } from 'react';
 import { IoClose } from 'react-icons/io5';
 import { useDispatch, useSelector } from 'react-redux';
-import { shareCanvasMultiple, fetchUsers } from '../../services/canvasApi';
 import { getUserFromToken } from '../../services/authApi';
 import {
   closeShareModal,
   setShareModalUsers,
-  setShareModalLoading,
-  setShareModalSharing,
   setShareModalError,
-  toggleSelectedUser
+  toggleSelectedUser,
+  fetchUsersAsync,
+  shareCanvasAsync
 } from '../../store/canvasSlice';
-import type { RootState } from '../../store/store';
+import type { AppDispatch } from '../../store/store';
+import { selectShareModalIsOpen, selectShareModalUsers, selectShareModalSelectedUsers, selectShareModalLoading, selectShareModalSharing, selectShareModalError, selectShareModalSelectedRole } from '../../store/selectors';
 import './ShareModal.css';
 
 interface ShareModalProps {
@@ -20,16 +20,14 @@ interface ShareModalProps {
 }
 
 const ShareModal: React.FC<ShareModalProps> = ({ canvasId, canvasTitle }) => {
-  const dispatch = useDispatch();
-  const {
-    isOpen,
-    users,
-    selectedUsers,
-    selectedRole,
-    loading,
-    sharing,
-    error
-  } = useSelector((state: RootState) => state.canvas.shareModal);
+  const dispatch = useDispatch<AppDispatch>();
+  const isOpen = useSelector(selectShareModalIsOpen);
+  const users = useSelector(selectShareModalUsers);
+  const selectedUsers = useSelector(selectShareModalSelectedUsers);
+  const selectedRole = useSelector(selectShareModalSelectedRole);
+  const loading = useSelector(selectShareModalLoading);
+  const sharing = useSelector(selectShareModalSharing);
+  const error = useSelector(selectShareModalError);
 
   useEffect(() => {
     if (isOpen) {
@@ -39,26 +37,16 @@ const ShareModal: React.FC<ShareModalProps> = ({ canvasId, canvasTitle }) => {
 
   const loadUsers = async () => {
     try {
-      dispatch(setShareModalLoading(true));
-      dispatch(setShareModalError(null));
-      const response = await fetchUsers();
-      if (response.success) {
-        // Get current user to filter them out
-        const currentUser = getUserFromToken();
-        console.log({ currentUser });
-        const filteredUsers = currentUser
-          ? response.data.filter(user => user._id !== currentUser.id)
-          : response.data;
-
-        dispatch(setShareModalUsers(filteredUsers));
-      } else {
-        dispatch(setShareModalError('Failed to load users'));
-      }
-    } catch (err) {
-      console.error('Error loading users:', err);
-      dispatch(setShareModalError('Failed to load users'));
-    } finally {
-      dispatch(setShareModalLoading(false));
+      const users = await dispatch(fetchUsersAsync()).unwrap();
+      // Get current user to filter them out
+      const currentUser = getUserFromToken();
+      const filteredUsers = currentUser
+        ? users.filter((user: any) => user._id !== currentUser.id)
+        : users;
+      dispatch(setShareModalUsers(filteredUsers));
+    } catch (error: any) {
+      console.error('Error loading users:', error);
+      dispatch(setShareModalError(error || 'Failed to load users'));
     }
   };
 
@@ -73,22 +61,12 @@ const ShareModal: React.FC<ShareModalProps> = ({ canvasId, canvasTitle }) => {
     }
 
     try {
-      dispatch(setShareModalSharing(true));
-      dispatch(setShareModalError(null));
-
-      const response = await shareCanvasMultiple(canvasId, selectedUsers, selectedRole);
-
-      if (response.success) {
-        alert(`Canvas "${canvasTitle || 'Untitled'}" shared successfully with ${selectedUsers.length} user(s) as ${selectedRole}(s)!`);
-        dispatch(closeShareModal());
-      } else {
-        dispatch(setShareModalError(response.message || 'Failed to share canvas'));
-      }
-    } catch (err) {
+      await dispatch(shareCanvasAsync({ canvasId, userIds: selectedUsers, role: selectedRole })).unwrap();
+      alert(`Canvas "${canvasTitle || 'Untitled'}" shared successfully with ${selectedUsers.length} user(s) as ${selectedRole}(s)!`);
+      dispatch(closeShareModal());
+    } catch (err: any) {
       console.error('Error sharing canvas:', err);
-      dispatch(setShareModalError('Failed to share canvas. Please try again.'));
-    } finally {
-      dispatch(setShareModalSharing(false));
+      dispatch(setShareModalError(err || 'Failed to share canvas. Please try again.'));
     }
   };
 

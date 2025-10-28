@@ -1,18 +1,16 @@
 import { useState, useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { getUserFromToken } from '../../services/authApi'
-import { createComment, fetchComments, fetchUsers, type Comment } from '../../services/canvasApi'
+import { type Comment } from '../../services/canvasApi'
 import {
-  setCommentPersistenceInitialized,
-  addSavingComment,
-  removeSavingComment,
   setCommentPersistenceError,
   clearCommentPersistenceError,
-  setUsersLoading,
-  setUsers,
-  setUsersError
+  fetchUsersAsync,
+  createCommentAsync,
+  fetchCommentsAsync
 } from '../../store/canvasSlice'
-import type { RootState } from '../../store/store'
+import type { AppDispatch } from '../../store/store'
+import { selectCommentPersistenceInitialized, selectSavingComments, selectCommentPersistenceError, selectUsersList } from '../../store/selectors'
 import './CommentPanel.css'
 
 interface CommentPanelProps {
@@ -20,7 +18,7 @@ interface CommentPanelProps {
 }
 
 export default function CommentPanel({ canvasId }: CommentPanelProps) {
-  const dispatch = useDispatch()
+  const dispatch = useDispatch<AppDispatch>()
   const [isOpen, setIsOpen] = useState(false)
   const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState('')
@@ -29,32 +27,14 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Redux state for comment persistence
-  const {
-    isInitialized,
-    savingComments,
-    error: persistenceError
-  } = useSelector((state: RootState) => state.canvas.commentPersistence)
-
-  const { users } = useSelector((state: RootState) => state.canvas.users)
+  const isInitialized = useSelector(selectCommentPersistenceInitialized)
+  const savingComments = useSelector(selectSavingComments)
+  const persistenceError = useSelector(selectCommentPersistenceError)
+  const users = useSelector(selectUsersList)
 
   // Fetch users when component mounts
   useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        dispatch(setUsersLoading(true))
-        dispatch(setUsersError(null))
-        const response = await fetchUsers()
-        if (response.success && response.data) {
-          dispatch(setUsers(response.data))
-        } else {
-          throw new Error(response.message || 'Failed to fetch users')
-        }
-      } catch (error) {
-        console.error('Failed to load users:', error)
-        dispatch(setUsersError('Failed to load users'))
-      }
-    }
-    loadUsers()
+    dispatch(fetchUsersAsync())
   }, [dispatch])
 
   // Scroll to bottom when new comments arrive
@@ -80,34 +60,19 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
     const loadInitialComments = async () => {
       try {
         dispatch(clearCommentPersistenceError())
-        const response = await fetchComments(canvasId)
+        await dispatch(fetchCommentsAsync(canvasId)).unwrap()
 
-        if (response.success && response.data) {
-          console.log('Fetched comments response:', response)
-
-          // Extract comments from the nested structure
-          const commentsArray = response.data.comments || []
-          console.log('Extracted comments:', commentsArray)
-
-          // Load comments into Yjs array
-          const ydoc = (window as any).ydoc
-          if (ydoc) {
-            const yComments = ydoc.getArray(`comments-${canvasId}`)
-            // Clear existing comments and add loaded ones
-            yComments.delete(0, yComments.length)
-            // Push each comment individually
-            commentsArray.forEach((comment: Comment) => {
-              yComments.push([comment])
-            })
-            console.log(`Loaded ${commentsArray.length} comments into Yjs`)
-          }
+        // Load comments into Yjs array
+        const ydoc = (window as any).ydoc
+        if (ydoc) {
+          const yComments = ydoc.getArray(`comments-${canvasId}`)
+          // Clear existing comments and add loaded ones
+          yComments.delete(0, yComments.length)
+          // Note: Comments will be loaded via Yjs observation
         }
-
-        dispatch(setCommentPersistenceInitialized(true))
       } catch (error) {
         console.error('Failed to load initial comments:', error)
         dispatch(setCommentPersistenceError('Failed to load comments'))
-        dispatch(setCommentPersistenceInitialized(true)) // Still mark as initialized to prevent retries
       }
     }
 
@@ -175,25 +140,13 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
     yComments.push([comment])
     setNewComment('')
 
-    // Save to backend (only if this is a new comment, not from another browser)
-    // Check if this comment is already being saved by another browser
+    // Save to backend using async thunk
     if (!savingComments.includes(comment.id)) {
       try {
-        dispatch(addSavingComment(comment.id))
-        dispatch(clearCommentPersistenceError())
-
-        const response = await createComment(canvasId, comment)
-
-        if (response.success) {
-          console.log('Comment saved to backend:', comment.id)
-        } else {
-          throw new Error(response.message || 'Failed to save comment')
-        }
+        await dispatch(createCommentAsync({ canvasId, comment })).unwrap()
       } catch (error) {
         console.error('Failed to save comment:', error)
         dispatch(setCommentPersistenceError('Failed to save comment'))
-      } finally {
-        dispatch(removeSavingComment(comment.id))
       }
     }
   }

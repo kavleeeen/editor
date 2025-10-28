@@ -1,5 +1,7 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
+import { fetchUsers, shareCanvasMultiple, createComment, fetchComments } from '../services/canvasApi';
+import type { Comment } from '../services/canvasApi';
 
 interface SelectedElement {
   type: 'textbox' | 'rect' | 'circle' | 'image' | 'triangle' | 'ellipse' | 'polygon' | null;
@@ -37,6 +39,12 @@ interface UserState {
   error: string | null;
 }
 
+interface UIState {
+  activePanel: 'font' | 'color' | 'shapes' | null;
+  layersCollapsed: boolean;
+  editingLayerId: string | null;
+}
+
 interface CanvasState {
   canvasState: string | null;
   selectedElement: SelectedElement | null;
@@ -45,6 +53,7 @@ interface CanvasState {
   shareModal: ShareModalState;
   commentPersistence: CommentPersistenceState;
   users: UserState;
+  ui: UIState;
 }
 
 const initialState: CanvasState = {
@@ -71,7 +80,77 @@ const initialState: CanvasState = {
     loading: false,
     error: null,
   },
+  ui: {
+    activePanel: null,
+    layersCollapsed: false,
+    editingLayerId: null,
+  },
 };
+
+// Async thunks
+export const fetchUsersAsync = createAsyncThunk(
+  'canvas/fetchUsers',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await fetchUsers();
+      if (response.success) {
+        return response.data;
+      } else {
+        return rejectWithValue(response.message || 'Failed to fetch users');
+      }
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Failed to fetch users');
+    }
+  }
+);
+
+export const shareCanvasAsync = createAsyncThunk(
+  'canvas/shareCanvas',
+  async ({ canvasId, userIds, role }: { canvasId: string; userIds: string[]; role: 'editor' | 'viewer' | 'owner' }, { rejectWithValue }) => {
+    try {
+      const response = await shareCanvasMultiple(canvasId, userIds, role);
+      if (response.success) {
+        return response;
+      } else {
+        return rejectWithValue(response.message || 'Failed to share canvas');
+      }
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Failed to share canvas');
+    }
+  }
+);
+
+export const createCommentAsync = createAsyncThunk(
+  'canvas/createComment',
+  async ({ canvasId, comment }: { canvasId: string; comment: Comment }, { rejectWithValue }) => {
+    try {
+      const response = await createComment(canvasId, comment);
+      if (response.success) {
+        return response.data;
+      } else {
+        return rejectWithValue(response.message || 'Failed to create comment');
+      }
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Failed to create comment');
+    }
+  }
+);
+
+export const fetchCommentsAsync = createAsyncThunk(
+  'canvas/fetchComments',
+  async (canvasId: string, { rejectWithValue }) => {
+    try {
+      const response = await fetchComments(canvasId);
+      if (response.success) {
+        return response.data?.comments || [];
+      } else {
+        return rejectWithValue(response.message || 'Failed to fetch comments');
+      }
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Failed to fetch comments');
+    }
+  }
+);
 
 const canvasSlice = createSlice({
   name: 'canvas',
@@ -106,12 +185,9 @@ const canvasSlice = createSlice({
       if (state.history.length > 0) {
         const last = state.history[state.history.length - 1];
         if (last === payloadStr) {
-          console.log('⏭️ Skipping duplicate snapshot');
           return;
         }
       }
-
-      console.log('🔵 saveToHistory called - new snapshot');
 
       // Cut off redo states
       const nextIndex = state.historyIndex + 1;
@@ -126,31 +202,16 @@ const canvasSlice = createSlice({
         state.history.shift();
         state.historyIndex = state.history.length - 1;
       }
-
-      console.log('After save:', {
-        historyLength: state.history.length,
-        historyIndex: state.historyIndex
-      });
     },
     undo: (state) => {
-      console.log('🟣 undo called');
-      console.log('Before undo:', {
-        historyLength: state.history.length,
-        historyIndex: state.historyIndex,
-        canUndo: state.historyIndex > 0
-      });
-
       if (state.historyIndex > 0 && state.history.length > 0) {
         const currentState = state.history[state.historyIndex];
         let targetIndex = state.historyIndex - 1;
-        let skippedDuplicates = 0;
 
         // Skip duplicates and find next unique state
         while (targetIndex >= 0) {
           const prevState = state.history[targetIndex];
           if (prevState === currentState) {
-            console.log(`⏭️ Skipping duplicate snapshot at index ${targetIndex}`);
-            skippedDuplicates++;
             targetIndex--;
           } else {
             break; // Found unique state
@@ -160,38 +221,18 @@ const canvasSlice = createSlice({
         if (targetIndex >= 0) {
           state.historyIndex = targetIndex;
           state.canvasState = state.history[state.historyIndex];
-
-          console.log('After undo:', {
-            historyIndex: state.historyIndex,
-            hasState: !!state.history[state.historyIndex],
-            skippedDuplicates
-          });
-        } else {
-          console.log('❌ No unique state found - at beginning of history');
         }
-      } else {
-        console.log('❌ Undo not possible');
       }
     },
     redo: (state) => {
-      console.log('🟢 redo called');
-      console.log('Before redo:', {
-        historyLength: state.history.length,
-        historyIndex: state.historyIndex,
-        canRedo: state.historyIndex < state.history.length - 1
-      });
-
       if (state.historyIndex < state.history.length - 1 && state.history.length > 0) {
         const currentState = state.history[state.historyIndex];
         let targetIndex = state.historyIndex + 1;
-        let skippedDuplicates = 0;
 
         // Skip duplicates and find next unique state
         while (targetIndex < state.history.length) {
           const nextState = state.history[targetIndex];
           if (nextState === currentState) {
-            console.log(`⏭️ Skipping duplicate snapshot at index ${targetIndex}`);
-            skippedDuplicates++;
             targetIndex++;
           } else {
             break; // Found unique state
@@ -201,17 +242,7 @@ const canvasSlice = createSlice({
         if (targetIndex < state.history.length) {
           state.historyIndex = targetIndex;
           state.canvasState = state.history[state.historyIndex];
-
-          console.log('After redo:', {
-            historyIndex: state.historyIndex,
-            hasState: !!state.history[state.historyIndex],
-            skippedDuplicates
-          });
-        } else {
-          console.log('❌ No unique state found - at end of history');
         }
-      } else {
-        console.log('❌ Redo not possible');
       }
     },
     clearHistory: (state) => {
@@ -288,6 +319,87 @@ const canvasSlice = createSlice({
       state.users.error = action.payload;
       state.users.loading = false;
     },
+
+    // UI State reducers
+    setActivePanel: (state, action: PayloadAction<'font' | 'color' | 'shapes' | null>) => {
+      state.ui.activePanel = action.payload;
+    },
+    setLayersCollapsed: (state, action: PayloadAction<boolean>) => {
+      state.ui.layersCollapsed = action.payload;
+    },
+    setEditingLayerId: (state, action: PayloadAction<string | null>) => {
+      state.ui.editingLayerId = action.payload;
+    },
+  },
+  extraReducers: (builder) => {
+    // Fetch Users
+    builder
+      .addCase(fetchUsersAsync.pending, (state) => {
+        state.users.loading = true;
+        state.users.error = null;
+      })
+      .addCase(fetchUsersAsync.fulfilled, (state, action) => {
+        state.users.users = action.payload;
+        state.users.loading = false;
+        state.users.error = null;
+      })
+      .addCase(fetchUsersAsync.rejected, (state, action) => {
+        state.users.loading = false;
+        state.users.error = action.payload as string;
+      });
+
+    // Share Canvas
+    builder
+      .addCase(shareCanvasAsync.pending, (state) => {
+        state.shareModal.sharing = true;
+        state.shareModal.error = null;
+      })
+      .addCase(shareCanvasAsync.fulfilled, (state) => {
+        state.shareModal.sharing = false;
+        state.shareModal.error = null;
+      })
+      .addCase(shareCanvasAsync.rejected, (state, action) => {
+        state.shareModal.sharing = false;
+        state.shareModal.error = action.payload as string;
+      });
+
+    // Create Comment
+    builder
+      .addCase(createCommentAsync.pending, (state, action) => {
+        const commentId = action.meta.arg.comment.id;
+        if (!state.commentPersistence.savingComments.includes(commentId)) {
+          state.commentPersistence.savingComments.push(commentId);
+        }
+        state.commentPersistence.error = null;
+      })
+      .addCase(createCommentAsync.fulfilled, (state, action) => {
+        const commentId = action.meta.arg.comment.id;
+        state.commentPersistence.savingComments = state.commentPersistence.savingComments.filter(
+          id => id !== commentId
+        );
+        state.commentPersistence.error = null;
+      })
+      .addCase(createCommentAsync.rejected, (state, action) => {
+        const commentId = action.meta.arg.comment.id;
+        state.commentPersistence.savingComments = state.commentPersistence.savingComments.filter(
+          id => id !== commentId
+        );
+        state.commentPersistence.error = action.payload as string;
+      });
+
+    // Fetch Comments
+    builder
+      .addCase(fetchCommentsAsync.pending, (state) => {
+        state.commentPersistence.error = null;
+      })
+      .addCase(fetchCommentsAsync.fulfilled, (state) => {
+        state.commentPersistence.isInitialized = true;
+        state.commentPersistence.error = null;
+      })
+      .addCase(fetchCommentsAsync.rejected, (state, action) => {
+        state.commentPersistence.isInitialized = true;
+        state.commentPersistence.error = action.payload as string;
+      });
   },
 });
 
@@ -316,7 +428,10 @@ export const {
   clearCommentPersistenceError,
   setUsersLoading,
   setUsers,
-  setUsersError
+  setUsersError,
+  setActivePanel,
+  setLayersCollapsed,
+  setEditingLayerId
 } = canvasSlice.actions;
 export default canvasSlice.reducer;
 

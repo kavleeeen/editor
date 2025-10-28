@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import type { RootState } from '../../store/store';
 import { updateCanvasState } from '../../store/canvasSlice';
+import { selectSelectedElement } from '../../store/selectors';
 import type { FabricObject } from 'fabric';
 import './LayersPanel.css';
 import type { ExtendedCanvas } from '../../types/canvas';
@@ -24,7 +24,7 @@ const LayersPanel = () => {
   const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const customNames = useRef<Map<string, string>>(new Map());
 
-  const selectedElement = useSelector((state: RootState) => state.canvas.selectedElement);
+  const selectedElement = useSelector(selectSelectedElement);
   const dispatch = useDispatch();
 
   const updateLayers = useCallback(() => {

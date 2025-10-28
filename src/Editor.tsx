@@ -15,26 +15,24 @@ import UndoRedoToolbar from './components/UndoRedoToolbar/UndoRedoToolbar'
 import Loader from './components/Loader/Loader'
 import CommentPanel from './components/CommentPanel/CommentPanel'
 import ShareModal from './components/ShareModal/ShareModal'
-import { updateSelectedElementColor } from './store/canvasSlice'
+import { updateSelectedElementColor, setActivePanel } from './store/canvasSlice'
 import { loadCanvas, updateCanvas } from './services/canvasApi'
 import { uploadFile } from './services/uploadApi'
 import { canvasToPngFile } from './utils/canvasToPng'
-import type { RootState } from './store/store'
+import { selectActivePanel, selectSelectedElement } from './store/selectors'
 import { colors } from './constants/colors'
 import './Editor.css'
 import { getUserFromToken } from './services/authApi'
 import { BsHouse } from 'react-icons/bs'
 
-type PanelType = 'font' | 'color' | 'shapes' | null
-
 function Editor() {
-  const [activePanel, setActivePanel] = useState<PanelType>(null)
   const [isLoadingCanvas, setIsLoadingCanvas] = useState(true)
   const [canvasTitle, setCanvasTitle] = useState<string>('Untitled')
   const [isEditingTitle, setIsEditingTitle] = useState<boolean>(false)
   const titleInputRef = useRef<HTMLInputElement | null>(null)
   const [connectedPeers, setConnectedPeers] = useState<{ id: string; name: string; initials: string }[]>([])
-  const selectedElement = useSelector((state: RootState) => state.canvas.selectedElement)
+  const selectedElement = useSelector(selectSelectedElement)
+  const activePanel = useSelector(selectActivePanel)
   const canvasWrapperRef = useRef<HTMLDivElement>(null)
   const lastSavedDataRef = useRef<string>('')
   const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -47,10 +45,10 @@ function Editor() {
     return <Navigate to="/dashboard" replace />
   }
 
-  const handleFontClick = () => setActivePanel('font')
-  const handleColorClick = () => setActivePanel('color')
-  const handleShapesClick = () => setActivePanel('shapes')
-  const closePanel = () => setActivePanel(null)
+  const handleFontClick = () => dispatch(setActivePanel('font'))
+  const handleColorClick = () => dispatch(setActivePanel('color'))
+  const handleShapesClick = () => dispatch(setActivePanel('shapes'))
+  const closePanel = () => dispatch(setActivePanel(null))
 
   // Auto-save function
   const performAutoSave = async () => {

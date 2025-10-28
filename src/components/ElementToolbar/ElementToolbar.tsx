@@ -4,7 +4,7 @@ import { RxBorderAll } from 'react-icons/rx';
 import { Tooltip } from '@mui/material';
 import type { FabricObject } from 'fabric';
 import './ElementToolbar.css';
-import type { RootState } from '../../store/store';
+import { selectSelectedElement } from '../../store/selectors';
 import { colors } from '../../constants/colors';
 import type { ExtendedCanvas } from '../../types/canvas';
 
@@ -14,7 +14,7 @@ interface ElementToolbarProps {
 }
 
 const ElementToolbar = ({ onFontClick, onColorClick }: ElementToolbarProps) => {
-  const selectedElement = useSelector((state: RootState) => state.canvas.selectedElement);
+  const selectedElement = useSelector(selectSelectedElement);
 
   if (!selectedElement) {
     return null;
