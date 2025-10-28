@@ -1,6 +1,7 @@
 import { Image, Textbox } from 'fabric';
 import { BsTextParagraph, BsImage, BsSquare, BsDownload, BsShare } from 'react-icons/bs';
 import { shareCanvas } from '../../services/canvasApi';
+import { uploadFile } from '../../services/uploadApi';
 import './Sidebar.css';
 import type { ExtendedCanvas } from '../../types/canvas';
 
@@ -43,13 +44,24 @@ const Sidebar = ({ onShapesClick, canvasId }: SidebarProps) => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const imgUrl = event.target?.result as string;
-          Image.fromURL(imgUrl)
+        try {
+          // Upload the file to the server
+          console.log('Uploading file:', file.name, file.size);
+          const uploadResult = await uploadFile(file);
+          console.log('Upload result:', uploadResult);
+
+          if (!uploadResult.success || !uploadResult.url) {
+            throw new Error(uploadResult.message || 'Upload failed');
+          }
+
+          console.log('Loading image from URL:', uploadResult.url);
+          // Use the uploaded image URL instead of data URL
+          Image.fromURL(uploadResult.url, {
+            crossOrigin: 'anonymous'
+          })
             .then((img) => {
               // Scale image to fit canvas if it's too large
               const maxWidth = canvas.width! * 0.8;
@@ -83,6 +95,7 @@ const Sidebar = ({ onShapesClick, canvasId }: SidebarProps) => {
 
               canvas.add(img);
               canvas.setActiveObject(img);
+              console.log('Image successfully added to canvas');
 
               // Manually trigger history save
               if ((canvas as any)._historySaveAction) {
@@ -93,8 +106,10 @@ const Sidebar = ({ onShapesClick, canvasId }: SidebarProps) => {
               console.error('Error loading image:', error);
               alert('Failed to load image. Please try another image.');
             });
-        };
-        reader.readAsDataURL(file);
+        } catch (error) {
+          console.error('Error uploading image:', error);
+          alert('Failed to upload image. Please try again.');
+        }
       }
     };
     input.click();
