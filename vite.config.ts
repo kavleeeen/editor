@@ -9,4 +9,15 @@ export default defineConfig({
   // If using a custom domain (CNAME) at the root, change this to '/'
   // Use relative base for GitHub Pages robustness (works for custom domains and subpaths)
   base: '/',
+  build: {
+    // Ensure proper MIME types for JavaScript modules
+    rollupOptions: {
+      output: {
+        // Use relative paths to avoid MIME type issues
+        assetFileNames: 'assets/[name]-[hash][extname]',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+      },
+    },
+  },
 })
