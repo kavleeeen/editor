@@ -39,6 +39,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Build
+        env:
+          VITE_VITE_WS_BE_URL: ${{ secrets.VITE_VITE_WS_BE_URL }}
+          VITE_BE_URL: ${{ secrets.VITE_BE_URL }}
         run: npm run build
       - name: Include CNAME in build output
         run: |
