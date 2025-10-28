@@ -121,6 +121,11 @@ const ShapesPanelContent = ({ onClose }: ShapesPanelProps) => {
         return;
     }
 
+    // Assign unique ID for CRDT sync
+    const ydoc = (window as any).ydoc
+    const clientId = ydoc?.clientID || 'unknown'
+      ; (shape as any).id = `${clientId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
     canvas.add(shape);
     canvas.setActiveObject(shape);
   };

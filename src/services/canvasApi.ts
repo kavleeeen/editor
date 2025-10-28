@@ -169,3 +169,21 @@ export const listCanvases = async (limit = 50, offset = 0): Promise<ListCanvases
   return response.json();
 };
 
+/**
+ * Share canvas with a user
+ */
+export const shareCanvas = async (canvasId: string, userId: string): Promise<any> => {
+  const headers = getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/canvas/share`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ canvasId, userId }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to share canvas: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+

@@ -1,13 +1,15 @@
 import { Canvas, Image, Textbox } from 'fabric';
 import { useNavigate } from 'react-router-dom';
-import { BsTextParagraph, BsImage, BsSquare, BsDownload, BsSave, BsFolder, BsHouse } from 'react-icons/bs';
+import { BsTextParagraph, BsImage, BsSquare, BsDownload, BsSave, BsFolder, BsHouse, BsShare } from 'react-icons/bs';
+import { shareCanvas, updateCanvas } from '../../services/canvasApi';
 import './Sidebar.css';
 
 interface SidebarProps {
   onShapesClick: () => void;
+  canvasId: string;
 }
 
-const Sidebar = ({ onShapesClick }: SidebarProps) => {
+const Sidebar = ({ onShapesClick, canvasId }: SidebarProps) => {
   const navigate = useNavigate();
   const addText = () => {
     const canvas = (window as any).fabricCanvas as Canvas;
@@ -17,6 +19,12 @@ const Sidebar = ({ onShapesClick }: SidebarProps) => {
       width: 200,
       fontSize: 20,
     });
+
+    // Assign unique ID for CRDT sync
+    const ydoc = (window as any).ydoc
+    const clientId = ydoc?.clientID || 'unknown'
+      ; (text as any).id = `${clientId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
     // Center the text on canvas
     const canvasCenterX = canvas.width! / 2;
     const canvasCenterY = canvas.height! / 2;
@@ -69,12 +77,17 @@ const Sidebar = ({ onShapesClick }: SidebarProps) => {
                 top: canvasCenterY - (img.height! * scale) / 2,
               });
 
+              // Assign unique ID for CRDT sync
+              const ydoc = (window as any).ydoc
+              const clientId = ydoc?.clientID || 'unknown'
+                ; (img as any).id = `${clientId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
               canvas.add(img);
               canvas.setActiveObject(img);
 
               // Manually trigger history save
-              if (canvas._historySaveAction) {
-                canvas._historySaveAction({ target: null });
+              if ((canvas as any)._historySaveAction) {
+                (canvas as any)._historySaveAction({ target: null });
               }
             })
             .catch((error) => {
@@ -139,6 +152,40 @@ const Sidebar = ({ onShapesClick }: SidebarProps) => {
     input.click();
   };
 
+  const handleShare = async () => {
+    try {
+      const userId = '68ffa7c696203598ebc20953'; // Hardcoded user ID
+      await shareCanvas(canvasId, userId);
+      alert('Canvas shared successfully!');
+    } catch (error) {
+      console.error('Error sharing canvas:', error);
+      alert('Failed to share canvas. Please try again.');
+    }
+  };
+
+  const handleSave = async () => {
+    const canvas = (window as any).fabricCanvas as Canvas;
+    if (!canvas) return;
+
+    try {
+      const designData: any = canvas.toJSON();
+      designData.width = canvas.getWidth();
+      designData.height = canvas.getHeight();
+
+      await updateCanvas(canvasId, {
+        designData,
+        metadata: {
+          title: 'My Design'
+        }
+      });
+
+      alert('Canvas saved successfully');
+    } catch (error) {
+      console.error('Error saving canvas:', error);
+      alert('Failed to save canvas. Please try again.');
+    }
+  };
+
   return (
     <>
       <div className="sidebar">
@@ -169,6 +216,10 @@ const Sidebar = ({ onShapesClick }: SidebarProps) => {
 
         <div className="sidebar-section">
           <h3 className="sidebar-title">Export</h3>
+          <button className="sidebar-item" onClick={handleSave}>
+            <BsSave className="sidebar-icon" />
+            <span className="sidebar-label">Save</span>
+          </button>
           <button className="sidebar-item" onClick={exportPNG}>
             <BsDownload className="sidebar-icon" />
             <span className="sidebar-label">Export PNG</span>
@@ -180,6 +231,10 @@ const Sidebar = ({ onShapesClick }: SidebarProps) => {
           <button className="sidebar-item" onClick={loadJSON}>
             <BsFolder className="sidebar-icon" />
             <span className="sidebar-label">Load JSON</span>
+          </button>
+          <button className="sidebar-item" onClick={handleShare}>
+            <BsShare className="sidebar-icon" />
+            <span className="sidebar-label">Share Canvas</span>
           </button>
         </div>
       </div>

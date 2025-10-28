@@ -1,6 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useParams, Navigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
+import * as Y from 'yjs'
+import { WebsocketProvider } from 'y-websocket'
 import Canvas from './components/Canvas/Canvas'
 import Sidebar from './components/Sidebar/Sidebar'
 import ElementToolbar from './components/ElementToolbar/ElementToolbar'
@@ -22,6 +24,7 @@ type PanelType = 'font' | 'color' | 'shapes' | null
 function Editor() {
   const [activePanel, setActivePanel] = useState<PanelType>(null)
   const [isLoadingCanvas, setIsLoadingCanvas] = useState(true)
+  const [connectionStatus, setConnectionStatus] = useState('disconnected')
   const selectedElement = useSelector((state: RootState) => state.canvas.selectedElement)
   const canvasWrapperRef = useRef<HTMLDivElement>(null)
   const lastSavedDataRef = useRef<string>('')
@@ -45,6 +48,81 @@ function Editor() {
     }
   }, [selectedElement, activePanel])
 
+  // Yjs collaboration setup for canvas JSON
+  useEffect(() => {
+    if (!id) return
+
+    const ydoc = new Y.Doc()
+    const provider = new WebsocketProvider('ws://localhost:3001', id, ydoc)
+
+    provider.on('status', (event: any) => {
+      setConnectionStatus(event.status)
+    })
+
+    const yShared = ydoc.getMap('shared-canvas')
+
+    const applyInbound = () => {
+      try {
+        const jsonStr = yShared.get('json') as string | undefined
+        if (!jsonStr) return
+        const data = JSON.parse(jsonStr)
+        console.log('📥 Applying inbound shared canvas JSON')
+        const canvas = (window as any).fabricCanvas
+        const canvasReady = (window as any).canvasReady
+        if (!canvas || !canvasReady) return
+        // Deduplication: if we were the sender and payload matches last sent, skip
+        const senderId = yShared.get('senderId') as number | undefined
+        const myId = (window as any).ydoc?.clientID as number | undefined
+        const lastSent = (window as any)._lastSentCanvasJson as string | undefined
+        if (myId && senderId && myId === senderId && lastSent && lastSent === jsonStr) {
+          return
+        }
+        // Deduplication: if inbound equals current canvas state, skip
+        try {
+          const current = canvas.toJSON()
+            ; (current as any).width = canvas.getWidth()
+            ; (current as any).height = canvas.getHeight()
+          const currentStr = JSON.stringify(current)
+          if (currentStr === jsonStr) {
+            return
+          }
+        } catch { }
+        ; (window as any)._lastAppliedCanvasJson = jsonStr
+          // Prevent outbound echo while applying
+          ; (window as any)._suppressCounter = true
+        canvas.loadFromJSON(data, () => {
+          try {
+            canvas.renderAll()
+            setTimeout(() => {
+              canvas.requestRenderAll()
+              // extend suppression window slightly to avoid late events
+              setTimeout(() => { (window as any)._suppressCounter = false }, 150)
+            }, 50)
+          } catch {
+            ; (window as any)._suppressCounter = false
+          }
+        })
+      } catch (e) {
+        console.warn('⚠️ Failed to apply inbound canvas json:', e)
+      }
+    }
+
+    // Initial apply if present
+    applyInbound()
+    // Observe updates
+    const observer = () => applyInbound()
+    yShared.observe(observer)
+
+      // Expose ydoc globally for Canvas to use
+      ; (window as any).ydoc = ydoc
+
+    return () => {
+      yShared.unobserve(observer)
+      provider.destroy()
+      ydoc.destroy()
+    }
+  }, [id])
+
   // Load canvas from API on mount
   useEffect(() => {
     const loadCanvasDesign = async () => {
@@ -67,7 +145,8 @@ function Editor() {
             if (canvas && canvasReady) {
               console.log('📥 Loading canvas design...');
 
-              // Load the design data into the canvas
+              // Load the design data into the canvas (suppress counter during initial load)
+              ; (window as any)._suppressCounter = true
               canvas.loadFromJSON(result.data.designData, () => {
                 console.log('📦 Canvas data loaded, rendering...');
 
@@ -87,11 +166,14 @@ function Editor() {
 
                   console.log('✅ Canvas loaded and rendered successfully');
                   setIsLoadingCanvas(false);
+                  // Re-enable counter after initial load settles
+                  setTimeout(() => { (window as any)._suppressCounter = false }, 50)
                 }, 200);
               }, (fabricObjects: any, error: any) => {
                 if (error) {
                   console.error('❌ Error loading canvas objects:', error);
                   setIsLoadingCanvas(false);
+                  ; (window as any)._suppressCounter = false
                 } else {
                   console.log('📦 Objects loaded:', fabricObjects?.length);
                 }
@@ -227,11 +309,16 @@ function Editor() {
 
   return (
     <div className="app">
+      {/* Connection indicator */}
+      <div style={{ position: 'fixed', top: 10, right: 10, zIndex: 1000, display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,0.75)', color: '#fff', padding: '6px 10px', borderRadius: 6 }}>
+        <div style={{ width: 8, height: 8, borderRadius: '50%', background: connectionStatus === 'connected' ? '#4ade80' : '#ef4444' }} />
+        <span>{connectionStatus}</span>
+      </div>
 
       {/* Loading overlay */}
       {isLoadingCanvas && <Loader title="Loading Canvas" text="Preparing your editor..." />}
 
-      <Sidebar onShapesClick={handleShapesClick} />
+      <Sidebar onShapesClick={handleShapesClick} canvasId={id} />
       <div className="main-content">
         <ElementToolbar onFontClick={handleFontClick} onColorClick={handleColorClick} />
       </div>

@@ -108,6 +108,40 @@ export const removeAuthToken = (): void => {
 };
 
 /**
+ * Decode JWT token to get user information
+ */
+export const getUserFromToken = (): User | null => {
+  const token = getAuthToken();
+  if (!token) return null;
+
+  try {
+    // JWT tokens have 3 parts separated by dots: header.payload.signature
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+
+    // Decode the payload (middle part)
+    const payload = parts[1];
+    // Add padding if needed for base64 decoding
+    const paddedPayload = payload + '='.repeat((4 - payload.length % 4) % 4);
+    const decodedPayload = atob(paddedPayload);
+    const userData = JSON.parse(decodedPayload);
+
+    // Return user information if available
+    if (userData && userData.name && userData.email) {
+      return {
+        id: userData.id || userData.sub || '',
+        email: userData.email,
+        name: userData.name
+      };
+    }
+  } catch (error) {
+    console.error('Error decoding token:', error);
+  }
+
+  return null;
+};
+
+/**
  * Check if user is authenticated
  */
 export const isAuthenticated = (): boolean => {

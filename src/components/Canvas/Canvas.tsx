@@ -217,6 +217,39 @@ const EditorCanvas = ({ addElementCallback, wrapperRef }: CanvasProps) => {
       (canvas as any)._historyInit();
 
       // Apply custom controls to all objects and set unique IDs
+      // Debounced sender for full canvas JSON to Yjs
+      const sendCanvasSnapshot = (() => {
+        let t: any = null
+        return () => {
+          if (t) clearTimeout(t)
+          t = setTimeout(() => {
+            try {
+              if ((window as any)._suppressCounter) return
+              const ydoc = (window as any).ydoc
+              if (!ydoc) return
+              const yShared = ydoc.getMap('shared-canvas')
+              const designData = canvas.toJSON()
+                ; (designData as any).width = canvas.getWidth()
+                ; (designData as any).height = canvas.getHeight()
+              const jsonStr = JSON.stringify(designData)
+              // Skip writing if identical to last value in the doc
+              const currentRemote = yShared.get('json') as string | undefined
+              if (currentRemote === jsonStr) return
+                // Track our last sent signature locally for echo suppression
+                ; (window as any)._lastSentCanvasJson = jsonStr
+              const senderId = ydoc.clientID
+              const senderTs = Date.now()
+              ydoc.transact(() => {
+                yShared.set('json', jsonStr)
+                yShared.set('updatedAt', senderTs)
+                yShared.set('senderId', senderId)
+                yShared.set('senderTs', senderTs)
+              }, { source: 'canvas-sync', clientId: senderId })
+            } catch { }
+          }, 250)
+        }
+      })()
+
       canvas.on('object:added', (e) => {
         const obj = e.target;
         if (obj) {
@@ -228,11 +261,22 @@ const EditorCanvas = ({ addElementCallback, wrapperRef }: CanvasProps) => {
           if (!objWithName.name) {
             objWithName.name = `${obj.type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
           }
+          // Ensure object has a stable id for CRDT
+          if (!(objWithName as any).id) {
+            const ydoc = (window as any).ydoc;
+            const clientId = ydoc?.clientID || 'local';
+            (objWithName as any).id = `${clientId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          }
 
           // Add name to stateProperties for serialization
           const existingProps = (obj as any).stateProperties || [];
           if (!existingProps.includes('name')) {
             (obj as any).stateProperties = [...existingProps, 'name'];
+          }
+          // Also include id in serialized props so toObject/toJSON carries it
+          const withNameProps = (obj as any).stateProperties || [];
+          if (!withNameProps.includes('id')) {
+            (obj as any).stateProperties = [...withNameProps, 'id'];
           }
 
           obj.set({
@@ -246,9 +290,27 @@ const EditorCanvas = ({ addElementCallback, wrapperRef }: CanvasProps) => {
           // Clear flag after set
           setTimeout(() => {
             (obj as any).__settingUp = false;
+            if (!(canvas as any).historyProcessing) {
+              sendCanvasSnapshot();
+            }
           }, 100);
         }
       });
+
+      // Send on modify/remove actions
+      canvas.on('object:modified', (e) => {
+        const obj = e?.target as any
+        if ((canvas as any).historyProcessing) return
+        if (obj?.__settingUp) return
+        sendCanvasSnapshot()
+      })
+
+      canvas.on('object:removed', (e) => {
+        const obj = e?.target as any
+        if ((canvas as any).historyProcessing) return
+        if (obj?.__settingUp) return
+        sendCanvasSnapshot()
+      })
 
       const handleSelection = () => {
         const activeObj = canvas.getActiveObject();
@@ -305,6 +367,9 @@ const EditorCanvas = ({ addElementCallback, wrapperRef }: CanvasProps) => {
         canvas.off('selection:created');
         canvas.off('selection:updated');
         canvas.off('selection:cleared');
+        canvas.off('object:added');
+        canvas.off('object:modified');
+        canvas.off('object:removed');
         // _historyDispose is called automatically via dispose() override
         canvas.dispose();
       };
