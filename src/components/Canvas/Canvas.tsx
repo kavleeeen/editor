@@ -385,7 +385,11 @@ const EditorCanvas = ({ addElementCallback, wrapperRef }: CanvasProps) => {
 
   return (
     <div className="canvas-wrapper" ref={wrapperRef}>
-      <canvas ref={canvasRef} />
+      <canvas
+        ref={canvasRef}
+        tabIndex={0}
+        style={{ outline: 'none' }}
+      />
     </div>
   );
 };

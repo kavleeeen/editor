@@ -435,6 +435,171 @@ function Editor() {
     }
   }, [])
 
+  // Keyboard shortcuts handler
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Don't trigger shortcuts when user is typing in input fields
+      const target = event.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true') {
+        return
+      }
+
+      const canvas = (window as any).fabricCanvas
+      if (!canvas) return
+
+      // Delete key - remove selected object
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        event.preventDefault()
+        const activeObj = canvas.getActiveObject()
+        if (activeObj) {
+          canvas.remove(activeObj)
+          canvas.renderAll()
+
+          // Manually trigger history save for deletion
+          if (canvas._historySaveAction) {
+            canvas._historySaveAction({ target: activeObj })
+          }
+
+          // Trigger collaborative sync
+          if ((canvas as any)._forceSync) {
+            (canvas as any)._forceSync()
+          }
+        }
+        return
+      }
+
+      // Escape key - deselect all objects
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        canvas.discardActiveObject()
+        canvas.renderAll()
+        return
+      }
+
+      // Ctrl+Z or Cmd+Z - undo
+      if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
+        event.preventDefault()
+        if (canvas.historyUndoAction) {
+          canvas.historyUndoAction()
+        }
+        return
+      }
+
+      // Ctrl+Y or Cmd+Y or Ctrl+Shift+Z - redo
+      if (((event.ctrlKey || event.metaKey) && event.key === 'y') ||
+        ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'Z')) {
+        event.preventDefault()
+        if (canvas.historyRedoAction) {
+          canvas.historyRedoAction()
+        }
+        return
+      }
+
+      // Ctrl+A or Cmd+A - select all objects
+      if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
+        event.preventDefault()
+        canvas.discardActiveObject()
+        const objects = canvas.getObjects()
+        if (objects.length > 0) {
+          const selection = new (window as any).fabric.ActiveSelection(objects, {
+            canvas: canvas,
+          })
+          canvas.setActiveObject(selection)
+          canvas.renderAll()
+        }
+        return
+      }
+
+      // Arrow keys - move selected objects
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) {
+        event.preventDefault()
+        const activeObj = canvas.getActiveObject()
+        if (activeObj) {
+          // Determine movement amount (larger with Shift key)
+          const moveAmount = event.shiftKey ? 10 : 1
+
+          let deltaX = 0
+          let deltaY = 0
+
+          switch (event.key) {
+            case 'ArrowLeft':
+              deltaX = -moveAmount
+              break
+            case 'ArrowRight':
+              deltaX = moveAmount
+              break
+            case 'ArrowUp':
+              deltaY = -moveAmount
+              break
+            case 'ArrowDown':
+              deltaY = moveAmount
+              break
+          }
+
+          // Move the object(s)
+          activeObj.set({
+            left: activeObj.left + deltaX,
+            top: activeObj.top + deltaY
+          })
+
+          // Set coordinates for all objects in selection if it's a multi-selection
+          if (activeObj.type === 'activeSelection') {
+            activeObj.forEachObject((obj: any) => {
+              obj.set({
+                left: obj.left + deltaX,
+                top: obj.top + deltaY
+              })
+              // Update coordinates for each object in the selection
+              obj.setCoords()
+            })
+            // Update coordinates for the entire selection
+            activeObj.setCoords()
+          } else {
+            // Update coordinates for single object
+            activeObj.setCoords()
+          }
+
+          canvas.renderAll()
+
+          // Manually trigger history save for movement
+          if (canvas._historySaveAction) {
+            canvas._historySaveAction({ target: activeObj })
+          }
+
+          // Trigger collaborative sync
+          if ((canvas as any)._forceSync) {
+            (canvas as any)._forceSync()
+          }
+        }
+        return
+      }
+    }
+
+    // Add event listener to document for global keyboard shortcuts
+    document.addEventListener('keydown', handleKeyDown)
+
+    // Also add click handler to focus canvas when clicked
+    const handleCanvasClick = () => {
+      const canvas = (window as any).fabricCanvas
+      if (canvas && canvas.getElement()) {
+        canvas.getElement().focus()
+      }
+    }
+
+    // Add click listener to canvas wrapper to ensure focus
+    const canvasWrapper = canvasWrapperRef.current
+    if (canvasWrapper) {
+      canvasWrapper.addEventListener('click', handleCanvasClick)
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      if (canvasWrapper) {
+        canvasWrapper.removeEventListener('click', handleCanvasClick)
+      }
+    }
+  }, [])
+
   return (
     <div className="app">
       {/* Unified Sticky Toolbar */}
@@ -555,29 +720,29 @@ function Editor() {
           {connectedPeers.length === 0 ? (
             <span style={{ fontSize: '14px', color: '#9ca3af' }}>You are alone in this :(</span>
           ) : (
-              <div style={{ display: 'flex', gap: '6px' }}>
-                {connectedPeers.map((p) => (
-                  <div
-                    key={p.id || p.name}
-                    title={p.name}
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: '50%',
-                      background: getPeerColor(p.id || p.name),
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: '#333',
-                      border: '2px solid #fff',
-                      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-                    }}
-                  >
-                    {p.initials}
-                  </div>
-                ))}
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {connectedPeers.map((p) => (
+                <div
+                  key={p.id || p.name}
+                  title={p.name}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    background: getPeerColor(p.id || p.name),
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: '#333',
+                    border: '2px solid #fff',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+                  }}
+                >
+                  {p.initials}
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -597,62 +762,15 @@ function Editor() {
         </div>
 
 
-      {activePanel === 'font' && (
-        <Panel title="Font" onClose={closePanel}>
-          <FontPanel onSelectFont={(fontFamily) => {
-            const canvas = (window as any).fabricCanvas;
-            if (!canvas) return;
-            const activeObj = canvas.getActiveObject();
-            if (activeObj && activeObj.type === 'textbox') {
-              // Apply font change
-              activeObj.set('fontFamily', fontFamily);
-              canvas.requestRenderAll();
-
-              // Manually trigger history save for toolbar actions
-              if (canvas._historySaveAction) {
-                canvas._historySaveAction({ target: activeObj });
-              }
-              // Trigger collaborative sync
-              if ((canvas as any)._forceSync) {
-                (canvas as any)._forceSync()
-              }
-            }
-            // Don't close panel automatically - let user close it manually
-          }} />
-        </Panel>
-      )}
-
-      {activePanel === 'color' && (
-        <Panel title="Color" onClose={closePanel}>
-          <ColorPanel
-            currentColor={selectedElement?.color || colors.black}
-            onColorChange={(color) => {
+        {activePanel === 'font' && (
+          <Panel title="Font" onClose={closePanel}>
+            <FontPanel onSelectFont={(fontFamily) => {
               const canvas = (window as any).fabricCanvas;
               if (!canvas) return;
               const activeObj = canvas.getActiveObject();
-              if (activeObj) {
-                // Apply color change
-                activeObj.set('fill', color);
-                canvas.requestRenderAll();
-                dispatch(updateSelectedElementColor(color));
-
-                // Manually trigger history save for toolbar actions
-                if (canvas._historySaveAction) {
-                  canvas._historySaveAction({ target: activeObj });
-                }
-                // Trigger collaborative sync
-                if ((canvas as any)._forceSync) {
-                  (canvas as any)._forceSync()
-                }
-              }
-            }}
-            onBorderColorChange={(color: string) => {
-              const canvas = (window as any).fabricCanvas;
-              if (!canvas) return;
-              const activeObj = canvas.getActiveObject();
-              if (activeObj) {
-                // Apply border color change
-                activeObj.set('stroke', color);
+              if (activeObj && activeObj.type === 'textbox') {
+                // Apply font change
+                activeObj.set('fontFamily', fontFamily);
                 canvas.requestRenderAll();
 
                 // Manually trigger history save for toolbar actions
@@ -664,14 +782,61 @@ function Editor() {
                   (canvas as any)._forceSync()
                 }
               }
-            }}
-          />
-        </Panel>
-      )}
+              // Don't close panel automatically - let user close it manually
+            }} />
+          </Panel>
+        )}
 
-      {activePanel === 'shapes' && (
-        <ShapesPanel onClose={closePanel} />
-      )}
+        {activePanel === 'color' && (
+          <Panel title="Color" onClose={closePanel}>
+            <ColorPanel
+              currentColor={selectedElement?.color || colors.black}
+              onColorChange={(color) => {
+                const canvas = (window as any).fabricCanvas;
+                if (!canvas) return;
+                const activeObj = canvas.getActiveObject();
+                if (activeObj) {
+                  // Apply color change
+                  activeObj.set('fill', color);
+                  canvas.requestRenderAll();
+                  dispatch(updateSelectedElementColor(color));
+
+                  // Manually trigger history save for toolbar actions
+                  if (canvas._historySaveAction) {
+                    canvas._historySaveAction({ target: activeObj });
+                  }
+                  // Trigger collaborative sync
+                  if ((canvas as any)._forceSync) {
+                    (canvas as any)._forceSync()
+                  }
+                }
+              }}
+              onBorderColorChange={(color: string) => {
+                const canvas = (window as any).fabricCanvas;
+                if (!canvas) return;
+                const activeObj = canvas.getActiveObject();
+                if (activeObj) {
+                  // Apply border color change
+                  activeObj.set('stroke', color);
+                  canvas.requestRenderAll();
+
+                  // Manually trigger history save for toolbar actions
+                  if (canvas._historySaveAction) {
+                    canvas._historySaveAction({ target: activeObj });
+                  }
+                  // Trigger collaborative sync
+                  if ((canvas as any)._forceSync) {
+                    (canvas as any)._forceSync()
+                  }
+                }
+              }}
+            />
+          </Panel>
+        )}
+
+        {activePanel === 'shapes' && (
+          <ShapesPanel onClose={closePanel} />
+        )}
 
         <LayersPanel />
       </div>
