@@ -24,7 +24,7 @@ jobs:
     - name: Build
       run: npm run build
       env:
-        VITE_BE_URL: https://editor-backend-gwvsmxazbq-el.a.run.app
+        VITE_BE_URL: https://editor-backend-gwvsmxazbq-el.a.run.app/api/v1
         VITE_WS_BE_URL: wss://editor-backend-gwvsmxazbq-el.a.run.app
         
     - name: Deploy to GitHub Pages
