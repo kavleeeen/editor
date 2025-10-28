@@ -6,7 +6,7 @@ interface ShapesPanelProps {
   onClose: () => void;
 }
 
-const ShapesPanelContent = ({ onClose }: ShapesPanelProps) => {
+const ShapesPanelContent = () => {
   const addShape = (shapeType: string) => {
     const canvas = (window as any).fabricCanvas as Canvas;
     if (!canvas) return;
@@ -158,7 +158,7 @@ const ShapesPanelContent = ({ onClose }: ShapesPanelProps) => {
 const ShapesPanel = ({ onClose }: ShapesPanelProps) => {
   return (
     <Panel title="Shapes" onClose={onClose}>
-      <ShapesPanelContent onClose={onClose} />
+      <ShapesPanelContent />
     </Panel>
   );
 };

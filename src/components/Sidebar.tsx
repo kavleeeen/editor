@@ -1,7 +1,8 @@
-import { Canvas, Image, Textbox } from 'fabric';
+import { Image, Textbox } from 'fabric';
 import { useNavigate } from 'react-router-dom';
-import { BsTextParagraph, BsImage, BsSquare, BsDownload, BsSave, BsFolder, BsHouse } from 'react-icons/bs';
+import { BsTextParagraph, BsImage, BsSquare, BsDownload, BsHouse } from 'react-icons/bs';
 import './Sidebar.css';
+import type { ExtendedCanvas } from '../types/canvas';
 
 interface SidebarProps {
   onShapesClick: () => void;
@@ -10,7 +11,7 @@ interface SidebarProps {
 const Sidebar = ({ onShapesClick }: SidebarProps) => {
   const navigate = useNavigate();
   const addText = () => {
-    const canvas = (window as any).fabricCanvas as Canvas;
+    const canvas = (window as any).fabricCanvas as ExtendedCanvas;
     if (!canvas) return;
 
     const text = new Textbox('Click to edit', {
@@ -29,7 +30,7 @@ const Sidebar = ({ onShapesClick }: SidebarProps) => {
   };
 
   const addImage = () => {
-    const canvas = (window as any).fabricCanvas as Canvas;
+    const canvas = (window as any).fabricCanvas as ExtendedCanvas;
     if (!canvas) return;
 
     // Create file input for image upload
@@ -90,7 +91,7 @@ const Sidebar = ({ onShapesClick }: SidebarProps) => {
 
 
   const exportPNG = () => {
-    const canvas = (window as any).fabricCanvas as Canvas;
+    const canvas = (window as any).fabricCanvas as ExtendedCanvas;
     if (!canvas) return;
 
     const dataURL = canvas.toDataURL({ format: 'png', multiplier: 2 });
@@ -98,45 +99,6 @@ const Sidebar = ({ onShapesClick }: SidebarProps) => {
     link.download = 'canvas.png';
     link.href = dataURL;
     link.click();
-  };
-
-  const exportJSON = () => {
-    const canvas = (window as any).fabricCanvas as Canvas;
-    if (!canvas) return;
-
-    const json = JSON.stringify(canvas.toJSON(), null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.download = 'canvas.json';
-    link.href = URL.createObjectURL(blob);
-    link.click();
-  };
-
-  const loadJSON = () => {
-    const canvas = (window as any).fabricCanvas as Canvas;
-    if (!canvas) return;
-
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          try {
-            const json = JSON.parse(event.target?.result as string);
-            canvas.loadFromJSON(json, () => {
-              canvas.renderAll();
-            });
-          } catch (error) {
-            console.error('Error loading JSON:', error);
-          }
-        };
-        reader.readAsText(file);
-      }
-    };
-    input.click();
   };
 
   return (

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
 import { isAuthenticated } from '../../services/authApi';
 import Login from '../Login/Login';
 import Register from '../Register/Register';

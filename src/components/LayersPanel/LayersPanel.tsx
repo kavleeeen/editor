@@ -2,8 +2,9 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../store/store';
 import { updateCanvasState } from '../../store/canvasSlice';
-import type { Canvas, FabricObject } from 'fabric';
+import type { FabricObject } from 'fabric';
 import './LayersPanel.css';
+import type { ExtendedCanvas } from '../../types/canvas';
 
 interface LayerItem {
   id: string;
@@ -14,7 +15,7 @@ interface LayerItem {
 
 const LayersPanel = () => {
   const [layers, setLayers] = useState<LayerItem[]>([]);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -27,7 +28,7 @@ const LayersPanel = () => {
   const dispatch = useDispatch();
 
   const updateLayers = useCallback(() => {
-    const canvas = (window as unknown as { fabricCanvas?: Canvas }).fabricCanvas;
+    const canvas = (window as any).fabricCanvas as ExtendedCanvas;
     if (!canvas) {
       setLayers([]);
       return;
@@ -65,7 +66,7 @@ const LayersPanel = () => {
     updateLayers();
 
     // Listen to canvas changes
-    const canvas = (window as unknown as { fabricCanvas?: Canvas }).fabricCanvas;
+    const canvas = (window as any).fabricCanvas as ExtendedCanvas;
     if (canvas) {
       // Load custom names from saved objects
       const objects = canvas.getObjects();
@@ -103,7 +104,7 @@ const LayersPanel = () => {
 
     // Wait a bit to allow double-click to fire
     clickTimeoutRef.current = setTimeout(() => {
-      const canvas = (window as unknown as { fabricCanvas?: Canvas }).fabricCanvas;
+      const canvas = (window as any).fabricCanvas as ExtendedCanvas;
       if (!canvas) return;
 
       canvas.setActiveObject(layer.object);
@@ -124,7 +125,7 @@ const LayersPanel = () => {
   const handleNameSave = () => {
     if (!editingId) return;
 
-    const canvas = (window as unknown as { fabricCanvas?: Canvas }).fabricCanvas;
+    const canvas = (window as any).fabricCanvas as ExtendedCanvas;
     if (!canvas) return;
 
     const layer = layers.find(l => l.id === editingId);
@@ -158,7 +159,7 @@ const LayersPanel = () => {
   const confirmDelete = () => {
     if (!deleteConfirm) return;
 
-    const canvas = (window as unknown as { fabricCanvas?: Canvas }).fabricCanvas;
+    const canvas = (window as any).fabricCanvas as ExtendedCanvas;
     if (!canvas) return;
 
     // Remove custom name from Map
@@ -197,7 +198,7 @@ const LayersPanel = () => {
       return;
     }
 
-    const canvas = (window as unknown as { fabricCanvas?: Canvas }).fabricCanvas;
+    const canvas = (window as any).fabricCanvas as ExtendedCanvas;
     if (!canvas) return;
 
     const draggedLayer = layers.find(l => l.id === draggedId);

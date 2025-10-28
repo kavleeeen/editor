@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import './ColorPanel.css';
 import { colors } from '../../constants/colors';
+import type { ExtendedCanvas } from '../../types/canvas';
+import { isExtendedCanvas } from '../../types/canvas';
 
 interface ColorPanelProps {
   currentColor: string;
@@ -68,7 +70,7 @@ const ColorPanel = ({ currentColor, onColorChange, onBorderColorChange }: ColorP
   // Border color HSV state
   const [borderHsv, setBorderHsv] = useState(() => {
     try {
-      const canvas = (window as { fabricCanvas?: { getActiveObject?: () => { type?: string; stroke?: string; strokeWidth?: number } } }).fabricCanvas;
+      const canvas = (window as any).fabricCanvas as ExtendedCanvas | undefined;
       const activeObj = canvas?.getActiveObject?.();
       const borderColor = activeObj && activeObj.type !== 'textbox' && activeObj.type !== 'image' && activeObj.strokeWidth !== undefined && activeObj.strokeWidth > 0
         ? ((activeObj as { stroke?: string }).stroke || colors.black)
@@ -82,7 +84,7 @@ const ColorPanel = ({ currentColor, onColorChange, onBorderColorChange }: ColorP
   // Editable border HEX input state
   const [editableBorderHex, setEditableBorderHex] = useState(() => {
     try {
-      const canvas = (window as { fabricCanvas?: { getActiveObject?: () => { type?: string; stroke?: string; strokeWidth?: number } } }).fabricCanvas;
+      const canvas = (window as any).fabricCanvas as ExtendedCanvas | undefined;
       const activeObj = canvas?.getActiveObject?.();
       return ((activeObj as { stroke?: string })?.stroke || colors.black);
     } catch {
@@ -199,7 +201,7 @@ const ColorPanel = ({ currentColor, onColorChange, onBorderColorChange }: ColorP
   const rgb = getRGB();
 
   // Check if current element is a shape with border
-  const canvas = (window as { fabricCanvas?: { getActiveObject?: () => { type?: string; strokeWidth?: number; fill?: string; stroke?: string }; renderAll?: () => void } }).fabricCanvas;
+  const canvas = (window as any).fabricCanvas as ExtendedCanvas | undefined;
 
   // Force re-read of active object on every render
   const activeObj = canvas?.getActiveObject?.();
@@ -245,7 +247,7 @@ const ColorPanel = ({ currentColor, onColorChange, onBorderColorChange }: ColorP
 
   // Add listener to canvas object:modified event to force re-render
   useEffect(() => {
-    if (!canvas) return;
+    if (!canvas || !isExtendedCanvas(canvas)) return;
 
     const handleObjectModified = () => {
       // Small delay to ensure object properties are updated

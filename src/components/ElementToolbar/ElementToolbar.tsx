@@ -2,10 +2,11 @@ import { useSelector } from 'react-redux';
 import { BsPalette } from 'react-icons/bs';
 import { RxBorderAll } from 'react-icons/rx';
 import { Tooltip } from '@mui/material';
-import type { Canvas, FabricObject } from 'fabric';
+import type { FabricObject } from 'fabric';
 import './ElementToolbar.css';
 import type { RootState } from '../../store/store';
 import { colors } from '../../constants/colors';
+import type { ExtendedCanvas } from '../../types/canvas';
 
 interface ElementToolbarProps {
   onFontClick: () => void;
@@ -19,7 +20,7 @@ const ElementToolbar = ({ onFontClick, onColorClick }: ElementToolbarProps) => {
     return null;
   }
 
-  const canvas = (window as any).fabricCanvas as Canvas;
+  const canvas = (window as any).fabricCanvas as ExtendedCanvas;
   if (!canvas) return null;
 
   const activeObj = canvas.getActiveObject() as FabricObject;

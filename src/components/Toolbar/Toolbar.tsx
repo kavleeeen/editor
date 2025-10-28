@@ -1,10 +1,11 @@
-import { Canvas, Image, Textbox, Rect, Circle } from 'fabric';
+import { Image, Textbox, Rect, Circle } from 'fabric';
 import './Toolbar.css';
+import type { ExtendedCanvas } from '../../types/canvas';
 
 const Toolbar = () => {
 
   const loadJSON = () => {
-    const canvas = (window as any).fabricCanvas as Canvas;
+    const canvas = (window as any).fabricCanvas as ExtendedCanvas;
     if (!canvas) return;
 
     const input = document.createElement('input');
@@ -35,7 +36,7 @@ const Toolbar = () => {
     input.click();
   };
   const addText = () => {
-    const canvas = (window as any).fabricCanvas as Canvas;
+    const canvas = (window as any).fabricCanvas as ExtendedCanvas;
     if (!canvas) return;
 
     const text = new Textbox('Click to edit', {
@@ -49,12 +50,14 @@ const Toolbar = () => {
   };
 
   const addImage = () => {
-    const canvas = (window as any).fabricCanvas as Canvas;
+    const canvas = (window as any).fabricCanvas as ExtendedCanvas;
     if (!canvas) return;
 
     // Using a placeholder image URL
     const imgUrl = 'https://via.placeholder.com/300x200';
-    Image.fromURL(imgUrl, (img) => {
+    Image.fromURL(imgUrl, {
+      crossOrigin: 'anonymous'
+    }).then((img: Image) => {
       img.set({ left: 100, top: 100, scaleX: 0.5, scaleY: 0.5 });
       canvas.add(img);
       canvas.setActiveObject(img);
@@ -62,7 +65,7 @@ const Toolbar = () => {
   };
 
   const addRectangle = () => {
-    const canvas = (window as any).fabricCanvas as Canvas;
+    const canvas = (window as any).fabricCanvas as ExtendedCanvas;
     if (!canvas) return;
 
     const rect = new Rect({
@@ -79,7 +82,7 @@ const Toolbar = () => {
   };
 
   const addCircle = () => {
-    const canvas = (window as any).fabricCanvas as Canvas;
+    const canvas = (window as any).fabricCanvas as ExtendedCanvas;
     if (!canvas) return;
 
     const circle = new Circle({
@@ -95,7 +98,7 @@ const Toolbar = () => {
   };
 
   const exportPNG = () => {
-    const canvas = (window as any).fabricCanvas as Canvas;
+    const canvas = (window as any).fabricCanvas as ExtendedCanvas;
     if (!canvas) return;
 
     // Export as PNG with high quality
@@ -113,7 +116,7 @@ const Toolbar = () => {
   };
 
   const exportJSON = () => {
-    const canvas = (window as any).fabricCanvas as Canvas;
+    const canvas = (window as any).fabricCanvas as ExtendedCanvas;
     if (!canvas) return;
 
     const json = JSON.stringify(canvas.toJSON(), null, 2);

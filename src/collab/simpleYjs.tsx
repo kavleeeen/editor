@@ -18,7 +18,7 @@ export default function SimpleYjs({ roomName }: Props) {
 
     // Create Y.Doc and connect to websocket server
     const ydoc = new Y.Doc()
-    const provider = new WebsocketProvider('ws://localhost:3001', roomName, ydoc)
+    const provider = new WebsocketProvider(import.meta.env.VITE_VITE_WS_BE_URL || 'ws://localhost:1234', roomName, ydoc)
 
     // Track connection status
     provider.on('status', (event: any) => {

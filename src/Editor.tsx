@@ -162,7 +162,7 @@ function Editor() {
     if (!id) return
 
     const ydoc = new Y.Doc()
-    const provider = new WebsocketProvider('ws://localhost:3001', id, ydoc)
+    const provider = new WebsocketProvider(import.meta.env.VITE_VITE_WS_BE_URL || 'ws://localhost:1234', id, ydoc)
 
     provider.on('status', (event: any) => {
       setConnectionStatus(event.status)

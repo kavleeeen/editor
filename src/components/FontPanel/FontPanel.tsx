@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Canvas, FabricObject } from 'fabric';
 import './FontPanel.css';
 
 interface FontPanelProps {
