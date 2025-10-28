@@ -824,12 +824,12 @@ function Editor() {
                     padding: '0 10px',
                     borderRadius: 6,
                     fontSize: 16,
-                  cursor: titleEditingPeers.length > 0 ? 'not-allowed' : 'text',
-                  minWidth: 120,
-                  maxWidth: 360,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
+                    cursor: titleEditingPeers.length > 0 ? 'not-allowed' : 'text',
+                    minWidth: 120,
+                    maxWidth: 360,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                     color: titleEditingPeers.length > 0 ? '#9ca3af' : '#1f2937',
                     opacity: titleEditingPeers.length > 0 ? 0.7 : 1
                   }}
