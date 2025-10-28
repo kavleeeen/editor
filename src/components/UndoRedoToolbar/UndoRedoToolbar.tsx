@@ -19,7 +19,19 @@ const UndoRedoToolbar = ({ isLoadingCanvas = false }: UndoRedoToolbarProps) => {
     if (!canvas || !canvasReady) return;
 
     const updateButtons = () => {
-      setCanUndo((canvas.historyUndo?.length || 0) > 0);
+      const undoLen = (canvas.historyUndo?.length || 0);
+      let lastUndoIsEmpty = false;
+      try {
+        const last = undoLen > 0 ? canvas.historyUndo[undoLen - 1] : null;
+        if (last && typeof last.json === 'string') {
+          const parsed = JSON.parse(last.json || '{}');
+          const objs = Array.isArray(parsed?.objects) ? parsed.objects : [];
+          lastUndoIsEmpty = objs.length === 0;
+        }
+      } catch { }
+
+      // Enable undo only if there is an undo state and it won't blank the canvas
+      setCanUndo(undoLen > 0 && !lastUndoIsEmpty);
       setCanRedo((canvas.historyRedo?.length || 0) > 0);
     };
 
@@ -53,6 +65,18 @@ const UndoRedoToolbar = ({ isLoadingCanvas = false }: UndoRedoToolbarProps) => {
     const canvas = (window as any).fabricCanvas;
     const canvasReady = (window as any).canvasReady;
     if (canvas && canvasReady && canvas.historyUndoAction) {
+      // Prevent undo if the next state would blank the canvas
+      try {
+        const undoLen = (canvas.historyUndo?.length || 0);
+        const last = undoLen > 0 ? canvas.historyUndo[undoLen - 1] : null;
+        if (last && typeof last.json === 'string') {
+          const parsed = JSON.parse(last.json || '{}');
+          const objs = Array.isArray(parsed?.objects) ? parsed.objects : [];
+          if (objs.length === 0) {
+            return;
+          }
+        }
+      } catch { }
       canvas.historyUndoAction(() => {
         if ((canvas as any)._forceSync) {
           (canvas as any)._forceSync();
