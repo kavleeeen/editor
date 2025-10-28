@@ -430,6 +430,10 @@ function Editor() {
               if (canvas._historySaveAction) {
                 canvas._historySaveAction({ target: activeObj });
               }
+              // Trigger collaborative sync
+              if ((canvas as any)._forceSync) {
+                (canvas as any)._forceSync()
+              }
             }
             // Don't close panel automatically - let user close it manually
           }} />
@@ -454,6 +458,10 @@ function Editor() {
                 if (canvas._historySaveAction) {
                   canvas._historySaveAction({ target: activeObj });
                 }
+                // Trigger collaborative sync
+                if ((canvas as any)._forceSync) {
+                  (canvas as any)._forceSync()
+                }
               }
             }}
             onBorderColorChange={(color: string) => {
@@ -468,6 +476,10 @@ function Editor() {
                 // Manually trigger history save for toolbar actions
                 if (canvas._historySaveAction) {
                   canvas._historySaveAction({ target: activeObj });
+                }
+                // Trigger collaborative sync
+                if ((canvas as any)._forceSync) {
+                  (canvas as any)._forceSync()
                 }
               }
             }}

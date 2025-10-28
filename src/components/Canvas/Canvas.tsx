@@ -24,7 +24,7 @@ declare module 'fabric' {
 // Debounce function
 const debounce = (func: any, wait: number, immediate?: boolean) => {
   let timeout: any;
-  return function (...args: any[]) {
+  return function (this: any, ...args: any[]) {
     const context = this;
     const later = () => {
       timeout = null;
@@ -43,7 +43,7 @@ const histories: Record<string, any> = {};
 // Note: Custom properties (name, id, layerType) are already handled
 // via the name property we set in object:added event
 
-(FabricCanvas.prototype as any)._historyNext = function () {
+(FabricCanvas.prototype as any)._historyNext = function (this: any) {
   const size = {
     height: this.getHeight(),
     width: this.getWidth(),
@@ -55,7 +55,7 @@ const histories: Record<string, any> = {};
   };
 };
 
-(FabricCanvas.prototype as any)._historyEvents = function () {
+(FabricCanvas.prototype as any)._historyEvents = function (this: any) {
   return {
     "object:added": this._historySaveAction,
     "object:removed": this._historySaveAction,
@@ -63,7 +63,7 @@ const histories: Record<string, any> = {};
   };
 };
 
-(FabricCanvas.prototype as any)._historyInit = function () {
+(FabricCanvas.prototype as any)._historyInit = function (this: any) {
   this.historyUndo = [];
   this.historyRedo = [];
   this.historyNextState = this._historyNext();
@@ -74,7 +74,7 @@ const histories: Record<string, any> = {};
 
 const store = () => {
   return debounce(
-    function (json: any) {
+    function (this: any, json: any) {
 
       // Deduplication: check if this state is different from the last one
       const lastState = this.historyUndo.length > 0
@@ -101,7 +101,7 @@ const createHistory = function (canvas: any) {
   return histories[canvas.getElement().id];
 };
 
-(FabricCanvas.prototype as any)._historySaveAction = function (e: any) {
+(FabricCanvas.prototype as any)._historySaveAction = function (this: any, e: any) {
   // Ignore objects without size (guides, etc.)
   if (e && e.target && (!e?.target.height || !e?.target.width)) {
     return;
@@ -250,6 +250,12 @@ const EditorCanvas = ({ addElementCallback, wrapperRef }: CanvasProps) => {
         }
       })()
 
+        // Expose a safe, explicit sync trigger for toolbar/panel actions
+        ; (canvas as any)._forceSync = () => {
+          if ((canvas as any).historyProcessing) return
+          sendCanvasSnapshot()
+        }
+
       canvas.on('object:added', (e) => {
         const obj = e.target;
         if (obj) {
@@ -370,6 +376,7 @@ const EditorCanvas = ({ addElementCallback, wrapperRef }: CanvasProps) => {
         canvas.off('object:added');
         canvas.off('object:modified');
         canvas.off('object:removed');
+        try { delete (canvas as any)._forceSync } catch { }
         // _historyDispose is called automatically via dispose() override
         canvas.dispose();
       };

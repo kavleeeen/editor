@@ -39,6 +39,10 @@ const ElementToolbar = ({ onFontClick, onColorClick }: ElementToolbarProps) => {
       if (canvas._historySaveAction) {
         canvas._historySaveAction({ target: obj });
       }
+      // Trigger collaborative sync
+      if ((canvas as any)._forceSync) {
+        (canvas as any)._forceSync()
+      }
     }
   };
 
@@ -53,6 +57,10 @@ const ElementToolbar = ({ onFontClick, onColorClick }: ElementToolbarProps) => {
       if (canvas._historySaveAction) {
         canvas._historySaveAction({ target: obj });
       }
+      // Trigger collaborative sync
+      if ((canvas as any)._forceSync) {
+        (canvas as any)._forceSync()
+      }
     }
   };
 
@@ -65,6 +73,10 @@ const ElementToolbar = ({ onFontClick, onColorClick }: ElementToolbarProps) => {
       // Manually trigger history save
       if (canvas._historySaveAction) {
         canvas._historySaveAction({ target: obj });
+      }
+      // Trigger collaborative sync
+      if ((canvas as any)._forceSync) {
+        (canvas as any)._forceSync()
       }
     }
   };
@@ -94,6 +106,10 @@ const ElementToolbar = ({ onFontClick, onColorClick }: ElementToolbarProps) => {
       if (canvas._historySaveAction) {
         canvas._historySaveAction({ target: obj });
       }
+      // Trigger collaborative sync
+      if ((canvas as any)._forceSync) {
+        (canvas as any)._forceSync()
+      }
     }
   };
 
@@ -121,6 +137,10 @@ const ElementToolbar = ({ onFontClick, onColorClick }: ElementToolbarProps) => {
       // Manually trigger history save
       if (canvas._historySaveAction) {
         canvas._historySaveAction({ target: obj });
+      }
+      // Trigger collaborative sync
+      if ((canvas as any)._forceSync) {
+        (canvas as any)._forceSync()
       }
     }
   };
@@ -170,6 +190,10 @@ const ElementToolbar = ({ onFontClick, onColorClick }: ElementToolbarProps) => {
                 // Manually trigger history save
                 if (canvas._historySaveAction) {
                   canvas._historySaveAction({ target: obj });
+                }
+                // Trigger collaborative sync
+                if ((canvas as any)._forceSync) {
+                  (canvas as any)._forceSync()
                 }
               }
             }}
