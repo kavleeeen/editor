@@ -43,13 +43,10 @@ jobs:
           VITE_VITE_WS_BE_URL: ${{ secrets.VITE_VITE_WS_BE_URL }}
           VITE_BE_URL: ${{ secrets.VITE_BE_URL }}
         run: npm run build
-      - name: Include CNAME and _headers in build output
+      - name: Include CNAME in build output
         run: |
           if [ -f CNAME ]; then
             cp CNAME dist/CNAME
-          fi
-          if [ -f public/_headers ]; then
-            cp public/_headers dist/_headers
           fi
       - name: Setup Pages
         uses: actions/configure-pages@v4
