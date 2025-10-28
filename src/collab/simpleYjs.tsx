@@ -8,7 +8,6 @@ type Props = {
 }
 
 export default function SimpleYjs({ roomName }: Props) {
-  const [status, setStatus] = useState('disconnected')
   const [clients, setClients] = useState<string[]>([])
   const [messages, setMessages] = useState<string[]>([])
   const [input, setInput] = useState('')
@@ -20,11 +19,6 @@ export default function SimpleYjs({ roomName }: Props) {
     const ydoc = new Y.Doc()
     const provider = new WebsocketProvider(import.meta.env.VITE_VITE_WS_BE_URL || 'ws://localhost:1234', roomName, ydoc)
 
-    // Track connection status
-    provider.on('status', (event: any) => {
-      setStatus(event.status)
-      console.log('[YJS] connection status:', event.status)
-    })
 
     // Awareness (presence)
     const awareness = provider.awareness

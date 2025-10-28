@@ -8,9 +8,10 @@ import type { ExtendedCanvas } from '../../types/canvas';
 interface SidebarProps {
   onShapesClick: () => void;
   canvasId: string;
+  canvasTitle?: string;
 }
 
-const Sidebar = ({ onShapesClick, canvasId }: SidebarProps) => {
+const Sidebar = ({ onShapesClick, canvasId, canvasTitle }: SidebarProps) => {
   const addText = () => {
     const canvas = (window as any).fabricCanvas as ExtendedCanvas;
     if (!canvas) return;
@@ -122,7 +123,12 @@ const Sidebar = ({ onShapesClick, canvasId }: SidebarProps) => {
 
     const dataURL = canvas.toDataURL({ format: 'png', multiplier: 2 });
     const link = document.createElement('a');
-    link.download = 'canvas.png';
+    
+    // Use canvas title as filename, sanitize it for file system compatibility
+    const title = canvasTitle || 'Untitled';
+    const sanitizedTitle = title.replace(/[^a-zA-Z0-9\s-_]/g, '').replace(/\s+/g, '_');
+    link.download = `${sanitizedTitle}.png`;
+    
     link.href = dataURL;
     link.click();
   };

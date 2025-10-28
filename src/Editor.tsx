@@ -29,7 +29,6 @@ function Editor() {
   const [canvasTitle, setCanvasTitle] = useState<string>('Untitled')
   const [isEditingTitle, setIsEditingTitle] = useState<boolean>(false)
   const titleInputRef = useRef<HTMLInputElement | null>(null)
-  const [connectionStatus, setConnectionStatus] = useState('disconnected')
   const [connectedPeers, setConnectedPeers] = useState<{ id: string; name: string; initials: string }[]>([])
   const selectedElement = useSelector((state: RootState) => state.canvas.selectedElement)
   const canvasWrapperRef = useRef<HTMLDivElement>(null)
@@ -164,9 +163,7 @@ function Editor() {
     const ydoc = new Y.Doc()
     const provider = new WebsocketProvider(import.meta.env.VITE_VITE_WS_BE_URL || 'ws://localhost:1234', id, ydoc)
 
-    provider.on('status', (event: any) => {
-      setConnectionStatus(event.status)
-    })
+
 
     // Presence: publish our user info once, and listen for others
     const awareness = provider.awareness
@@ -705,44 +702,35 @@ function Editor() {
           {/* Gap between undo/redo and status */}
           <div style={{ width: 24 }} />
 
-          {/* Connection Status */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#6b7280' }}>
-            <div style={{
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: connectionStatus === 'connected' ? '#10b981' : '#ef4444'
-            }} />
-            <span>{connectionStatus}</span>
-          </div>
+
 
           {/* Presence: show other users' initials */}
           {connectedPeers.length === 0 ? (
             <span style={{ fontSize: '14px', color: '#9ca3af' }}>You are alone in this :(</span>
           ) : (
-            <div style={{ display: 'flex', gap: '6px' }}>
-              {connectedPeers.map((p) => (
-                <div
-                  key={p.id || p.name}
-                  title={p.name}
-                  style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: '50%',
-                    background: getPeerColor(p.id || p.name),
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: '#333',
-                    border: '2px solid #fff',
-                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-                  }}
-                >
-                  {p.initials}
-                </div>
-              ))}
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {connectedPeers.map((p) => (
+                  <div
+                    key={p.id || p.name}
+                    title={p.name}
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      background: getPeerColor(p.id || p.name),
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: '#333',
+                      border: '2px solid #fff',
+                      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+                    }}
+                  >
+                    {p.initials}
+                  </div>
+                ))}
             </div>
           )}
         </div>
@@ -752,7 +740,7 @@ function Editor() {
         {/* Loading overlay */}
         {isLoadingCanvas && <Loader title="Loading Canvas" text="Preparing your editor..." />}
 
-        <Sidebar onShapesClick={handleShapesClick} canvasId={id} />
+        <Sidebar onShapesClick={handleShapesClick} canvasId={id} canvasTitle={canvasTitle} />
         <div className="main-content">
           {/* ElementToolbar moved to sticky toolbar above */}
         </div>
