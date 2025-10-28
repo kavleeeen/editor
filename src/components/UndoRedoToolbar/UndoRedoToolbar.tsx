@@ -33,7 +33,11 @@ const UndoRedoToolbar = ({ }: UndoRedoToolbarProps) => {
     console.log('⚡ handleUndo clicked');
     const canvas = (window as any).fabricCanvas;
     if (canvas && canvas.historyUndoAction) {
-      canvas.historyUndoAction();
+      canvas.historyUndoAction(() => {
+        if ((canvas as any)._forceSync) {
+          (canvas as any)._forceSync();
+        }
+      });
     }
   }, []);
 
@@ -41,7 +45,11 @@ const UndoRedoToolbar = ({ }: UndoRedoToolbarProps) => {
     console.log('⚡ handleRedo clicked');
     const canvas = (window as any).fabricCanvas;
     if (canvas && canvas.historyRedoAction) {
-      canvas.historyRedoAction();
+      canvas.historyRedoAction(() => {
+        if ((canvas as any)._forceSync) {
+          (canvas as any)._forceSync();
+        }
+      });
     }
   }, []);
 
