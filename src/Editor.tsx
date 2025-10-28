@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, Navigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import * as Y from 'yjs'
@@ -18,6 +18,7 @@ import { loadCanvas, updateCanvas } from './services/canvasApi'
 import type { RootState } from './store/store'
 import { colors } from './constants/colors'
 import './Editor.css'
+import { getUserFromToken } from './services/authApi'
 
 type PanelType = 'font' | 'color' | 'shapes' | null
 
@@ -25,6 +26,7 @@ function Editor() {
   const [activePanel, setActivePanel] = useState<PanelType>(null)
   const [isLoadingCanvas, setIsLoadingCanvas] = useState(true)
   const [connectionStatus, setConnectionStatus] = useState('disconnected')
+  const [connectedPeers, setConnectedPeers] = useState<{ id: string; name: string; initials: string }[]>([])
   const selectedElement = useSelector((state: RootState) => state.canvas.selectedElement)
   const canvasWrapperRef = useRef<HTMLDivElement>(null)
   const lastSavedDataRef = useRef<string>('')
@@ -48,7 +50,40 @@ function Editor() {
     }
   }, [selectedElement, activePanel])
 
-  // Yjs collaboration setup for canvas JSON
+  // Helper to compute initials from a name/email
+  const computeInitials = (name?: string, email?: string) => {
+    const n = (name || '').trim()
+    if (n) {
+      const parts = n.split(/\s+/).filter(Boolean)
+      const first = parts[0]?.[0] || ''
+      const last = parts.length > 1 ? parts[parts.length - 1]?.[0] : ''
+      return (first + last).toUpperCase() || first.toUpperCase()
+    }
+    const e = (email || '').trim()
+    if (e) return e[0]?.toUpperCase() || ''
+    return ''
+  }
+
+  // Soft colors for peer avatars
+  const softColors = [
+    '#FFB3BA', // Light pink
+    '#BAFFC9', // Light green
+    '#BAE1FF', // Light blue
+    '#FFFFBA', // Light yellow
+    '#FFDFBA'  // Light orange
+  ]
+
+  // Get random color for peer based on their ID
+  const getPeerColor = (peerId: string) => {
+    if (!peerId) return softColors[0]
+    let hash = 0
+    for (let i = 0;i < peerId.length;i++) {
+      hash = peerId.charCodeAt(i) + ((hash << 5) - hash)
+    }
+    return softColors[Math.abs(hash) % softColors.length]
+  }
+
+  // Yjs collaboration setup for canvas JSON + presence (awareness)
   useEffect(() => {
     if (!id) return
 
@@ -59,6 +94,38 @@ function Editor() {
       setConnectionStatus(event.status)
     })
 
+    // Presence: publish our user info once, and listen for others
+    const awareness = provider.awareness
+    const me = getUserFromToken()
+    const myInits = computeInitials(me?.name, me?.email)
+    awareness.setLocalStateField('user', {
+      id: me?.id || '',
+      name: me?.name || '',
+      email: me?.email || '',
+      initials: myInits
+    })
+
+    const handleAwarenessChange = () => {
+      try {
+        const statesMap: Map<number, any> = awareness.getStates()
+        const selfClientId = (ydoc as any).clientID as number
+        const peers = Array.from(statesMap.entries())
+          .filter(([clientId]) => clientId !== selfClientId)
+          .map(([, state]) => {
+            const u = state?.user || {}
+            return {
+              id: u.id || '',
+              name: u.name || 'Guest',
+              initials: (u.initials || computeInitials(u.name, u.email) || '??') as string
+            }
+          })
+        setConnectedPeers(peers)
+      } catch { /* noop */ }
+    }
+
+    awareness.on('change', handleAwarenessChange)
+    handleAwarenessChange()
+
     const yShared = ydoc.getMap('shared-canvas')
 
     const applyInbound = () => {
@@ -66,7 +133,6 @@ function Editor() {
         const jsonStr = yShared.get('json') as string | undefined
         if (!jsonStr) return
         const data = JSON.parse(jsonStr)
-        console.log('📥 Applying inbound shared canvas JSON')
         const canvas = (window as any).fabricCanvas
         const canvasReady = (window as any).canvasReady
         if (!canvas || !canvasReady) return
@@ -118,6 +184,7 @@ function Editor() {
 
     return () => {
       yShared.unobserve(observer)
+      awareness.off('change', handleAwarenessChange)
       provider.destroy()
       ydoc.destroy()
     }
@@ -143,12 +210,10 @@ function Editor() {
             const canvasReady = (window as any).canvasReady;
 
             if (canvas && canvasReady) {
-              console.log('📥 Loading canvas design...');
 
               // Load the design data into the canvas (suppress counter during initial load)
               ; (window as any)._suppressCounter = true
               canvas.loadFromJSON(result.data.designData, () => {
-                console.log('📦 Canvas data loaded, rendering...');
 
                 // Force immediate render
                 canvas.renderAll();
@@ -164,7 +229,6 @@ function Editor() {
                     canvasEl.dispatchEvent(new Event('resize'));
                   }
 
-                  console.log('✅ Canvas loaded and rendered successfully');
                   setIsLoadingCanvas(false);
                   // Re-enable counter after initial load settles
                   setTimeout(() => { (window as any)._suppressCounter = false }, 50)
@@ -180,7 +244,6 @@ function Editor() {
               });
             } else {
               // Retry if canvas not ready yet
-              console.log('⏳ Waiting for canvas to be ready...');
               setTimeout(waitForCanvas, 50);
             }
           };
@@ -188,13 +251,11 @@ function Editor() {
           waitForCanvas();
         } else {
           // No objects to load, just wait for canvas to be ready
-          console.log('ℹ️ Blank canvas - no objects to load');
           const waitForCanvas = () => {
             const canvas = (window as any).fabricCanvas;
             const canvasReady = (window as any).canvasReady;
 
             if (canvas && canvasReady) {
-              console.log('✅ Canvas ready');
               setIsLoadingCanvas(false);
             } else {
               setTimeout(waitForCanvas, 50);
@@ -309,10 +370,36 @@ function Editor() {
 
   return (
     <div className="app">
-      {/* Connection indicator */}
+      {/* Presence indicator: show other users' initials */}
       <div style={{ position: 'fixed', top: 10, right: 10, zIndex: 1000, display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,0.75)', color: '#fff', padding: '6px 10px', borderRadius: 6 }}>
         <div style={{ width: 8, height: 8, borderRadius: '50%', background: connectionStatus === 'connected' ? '#4ade80' : '#ef4444' }} />
-        <span>{connectionStatus}</span>
+        {connectedPeers.length === 0 ? (
+          <span>You are alone in this :(</span>
+        ) : (
+          <div style={{ display: 'flex', gap: 6 }}>
+            {connectedPeers.map((p) => (
+              <div
+                key={p.id || p.name}
+                title={p.name}
+                style={{
+                  width: 26,
+                  height: 26,
+                  borderRadius: '50%',
+                  background: getPeerColor(p.id || p.name),
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: '#333',
+                  border: '1px solid rgba(255,255,255,0.3)'
+                }}
+              >
+                {p.initials}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Loading overlay */}
