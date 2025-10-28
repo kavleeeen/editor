@@ -26,6 +26,9 @@ type PanelType = 'font' | 'color' | 'shapes' | null
 function Editor() {
   const [activePanel, setActivePanel] = useState<PanelType>(null)
   const [isLoadingCanvas, setIsLoadingCanvas] = useState(true)
+  const [canvasTitle, setCanvasTitle] = useState<string>('Untitled')
+  const [isEditingTitle, setIsEditingTitle] = useState<boolean>(false)
+  const titleInputRef = useRef<HTMLInputElement | null>(null)
   const [connectionStatus, setConnectionStatus] = useState('disconnected')
   const [connectedPeers, setConnectedPeers] = useState<{ id: string; name: string; initials: string }[]>([])
   const selectedElement = useSelector((state: RootState) => state.canvas.selectedElement)
@@ -69,7 +72,7 @@ function Editor() {
       await updateCanvas(id, {
         designData,
         metadata: {
-          title: 'My Design'
+          title: canvasTitle || 'Untitled'
         }
       })
 
@@ -81,6 +84,23 @@ function Editor() {
     }
   }
 
+  // Save only the title (along with current design data to avoid dropping content)
+  const saveTitle = async () => {
+    try {
+      const canvas = (window as any).fabricCanvas
+      if (!canvas) return
+      const designData = canvas.toJSON()
+        ; (designData as any).width = canvas.getWidth()
+        ; (designData as any).height = canvas.getHeight()
+      await updateCanvas(id, {
+        designData,
+        metadata: { title: canvasTitle || 'Untitled' }
+      })
+    } catch (e) {
+      console.error('❌ Failed to save title', e)
+    }
+  }
+
   // Reset auto-save timer
   const resetAutoSaveTimer = () => {
     if (autoSaveTimeoutRef.current) {
@@ -88,6 +108,14 @@ function Editor() {
     }
     autoSaveTimeoutRef.current = setTimeout(performAutoSave, 2500) // 3.5 seconds
   }
+
+  // Focus title input when entering edit mode
+  useEffect(() => {
+    if (isEditingTitle && titleInputRef.current) {
+      titleInputRef.current.focus()
+      titleInputRef.current.select()
+    }
+  }, [isEditingTitle])
 
   // Auto-close font/color panels when no element is selected (but keep shapes open)
   useEffect(() => {
@@ -282,6 +310,9 @@ function Editor() {
         const hasObjects = result.data?.designData?.objects?.length > 0;
 
         if (hasObjects) {
+          // Set initial title if present
+          const initialTitle = result.data?.metadata?.title
+          if (initialTitle) setCanvasTitle(initialTitle)
           // Wait for canvas to be initialized
           const waitForCanvas = () => {
             const canvas = (window as any).fabricCanvas;
@@ -328,6 +359,9 @@ function Editor() {
 
           waitForCanvas();
         } else {
+          // Set title even when no objects
+          const initialTitle = result.data?.metadata?.title
+          if (initialTitle) setCanvasTitle(initialTitle)
           // No objects to load, just wait for canvas to be ready
           const waitForCanvas = () => {
             const canvas = (window as any).fabricCanvas;
@@ -419,24 +453,76 @@ function Editor() {
         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
       }}>
         {/* Left: Home */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <button
             onClick={() => navigate('/')}
             title="Home"
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              width: 140, height: 32,
+              width: 110, height: 32,
               borderRadius: 6,
               color: '#000',
               border: '1px solid #e5e7eb',
               background: '#fff',
               cursor: 'pointer',
-              fontSize: 18,
-              gap: 8
+              fontSize: 16,
+              gap: 6
             }}
           >
-            Home  <BsHouse />
+            Home <BsHouse />
           </button>
+
+          {/* Inline title: click to edit */}
+          {isEditingTitle ? (
+            <input
+              ref={titleInputRef}
+              value={canvasTitle}
+              onChange={(e) => setCanvasTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  saveTitle()
+                  setIsEditingTitle(false)
+                } else if (e.key === 'Escape') {
+                  setIsEditingTitle(false)
+                }
+              }}
+              onBlur={() => {
+                saveTitle()
+                setIsEditingTitle(false)
+              }}
+              placeholder="Untitled"
+              style={{
+                border: '1px solid #e5e7eb',
+                height: 32,
+                borderRadius: 6,
+                padding: '0 10px',
+                fontSize: 16,
+                width: 260
+              }}
+            />
+          ) : (
+            <div
+              title="Click to edit"
+              onClick={() => setIsEditingTitle(true)}
+              style={{
+                height: 32,
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0 10px',
+                borderRadius: 6,
+                fontSize: 16,
+                cursor: 'text',
+                minWidth: 120,
+                maxWidth: 360,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                color: '#1f2937'
+              }}
+            >
+              {canvasTitle || 'Untitled'}
+            </div>
+          )}
         </div>
 
         {/* Center: Element controls only */}
