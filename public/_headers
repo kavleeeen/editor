@@ -1,0 +1,20 @@
+# Set correct MIME types for JavaScript modules
+/assets/*.js
+  Content-Type: application/javascript
+
+# Set correct MIME types for CSS files
+/assets/*.css
+  Content-Type: text/css
+
+# Set correct MIME types for SVG files
+*.svg
+  Content-Type: image/svg+xml
+
+# Set correct MIME types for HTML files
+*.html
+  Content-Type: text/html; charset=utf-8
+
+# Enable CORS for module scripts
+/assets/*.js
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
