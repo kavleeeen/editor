@@ -30,6 +30,7 @@ function Editor() {
   const selectedElement = useSelector((state: RootState) => state.canvas.selectedElement)
   const canvasWrapperRef = useRef<HTMLDivElement>(null)
   const lastSavedDataRef = useRef<string>('')
+  const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dispatch = useDispatch()
   const { id } = useParams<{ id: string }>()
 
@@ -42,6 +43,49 @@ function Editor() {
   const handleColorClick = () => setActivePanel('color')
   const handleShapesClick = () => setActivePanel('shapes')
   const closePanel = () => setActivePanel(null)
+
+  // Auto-save function
+  const performAutoSave = async () => {
+    if (!id) return
+
+    const canvas = (window as any).fabricCanvas
+    if (!canvas) return
+
+    try {
+      const designData = canvas.toJSON()
+      designData.width = canvas.getWidth()
+      designData.height = canvas.getHeight()
+
+      // Serialize current data to compare
+      const currentDataString = JSON.stringify(designData)
+
+      // Only save if data has changed
+      if (currentDataString === lastSavedDataRef.current) {
+        return
+      }
+
+      await updateCanvas(id, {
+        designData,
+        metadata: {
+          title: 'My Design'
+        }
+      })
+
+      // Update last saved data
+      lastSavedDataRef.current = currentDataString
+      console.log('💾 Auto-save completed at', new Date().toLocaleTimeString())
+    } catch (error) {
+      console.error('❌ Auto-save error:', error)
+    }
+  }
+
+  // Reset auto-save timer
+  const resetAutoSaveTimer = () => {
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current)
+    }
+    autoSaveTimeoutRef.current = setTimeout(performAutoSave, 2500) // 3.5 seconds
+  }
 
   // Auto-close font/color panels when no element is selected (but keep shapes open)
   useEffect(() => {
@@ -190,6 +234,38 @@ function Editor() {
     }
   }, [id])
 
+  // Set up auto-save timer reset on canvas changes
+  useEffect(() => {
+    const canvas = (window as any).fabricCanvas
+    if (!canvas) return
+
+    // Reset timer on any canvas action
+    const resetTimer = () => resetAutoSaveTimer()
+
+    // Listen to all canvas events that indicate changes
+    canvas.on('object:added', resetTimer)
+    canvas.on('object:modified', resetTimer)
+    canvas.on('object:removed', resetTimer)
+    canvas.on('history:undo', resetTimer)
+    canvas.on('history:redo', resetTimer)
+
+    // Start the initial timer
+    resetAutoSaveTimer()
+
+    return () => {
+      canvas.off('object:added', resetTimer)
+      canvas.off('object:modified', resetTimer)
+      canvas.off('object:removed', resetTimer)
+      canvas.off('history:undo', resetTimer)
+      canvas.off('history:redo', resetTimer)
+
+      // Clear any pending auto-save
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current)
+      }
+    }
+  }, [isLoadingCanvas]) // Re-run when canvas is loaded
+
   // Load canvas from API on mount
   useEffect(() => {
     const loadCanvasDesign = async () => {
@@ -281,51 +357,6 @@ function Editor() {
     return () => clearTimeout(timeout);
   }, [id]);
 
-  // Autosave canvas every 30 seconds (only if data changed)
-  useEffect(() => {
-    if (!id) return;
-
-    const autosave = async () => {
-      const canvas = (window as any).fabricCanvas;
-      if (!canvas) return;
-
-      try {
-        const designData = canvas.toJSON();
-        designData.width = canvas.getWidth();
-        designData.height = canvas.getHeight();
-
-        // Serialize current data to compare
-        const currentDataString = JSON.stringify(designData);
-
-        // Only save if data has changed
-        if (currentDataString === lastSavedDataRef.current) {
-          console.log('ℹ️ No changes detected, skipping autosave');
-          return;
-        }
-
-        await updateCanvas(id, {
-          designData,
-          metadata: {
-            title: 'My Design'
-          }
-        });
-
-        // Update last saved data
-        lastSavedDataRef.current = currentDataString;
-        console.log('💾 Autosave completed at', new Date().toLocaleTimeString());
-      } catch (error) {
-        console.error('❌ Autosave error:', error);
-      }
-    };
-
-    // Start autosave interval
-    const autosaveInterval = setInterval(autosave, 10000); // 30 seconds
-
-    return () => {
-      clearInterval(autosaveInterval);
-    };
-  }, [id]);
-
   // Update last saved data reference after initial load
   useEffect(() => {
     const canvas = (window as any).fabricCanvas;
@@ -352,7 +383,7 @@ function Editor() {
       const canvasHeight = 1080
 
       // Calculate scale to fit both width and height with padding
-      const padding = 20
+      const padding = 50
       const scaleX = (viewportWidth - padding * 2) / canvasWidth
       const scaleY = (viewportHeight - padding * 2) / canvasHeight
       const scale = Math.min(scaleX, scaleY) // Allow scaling down, never scale up beyond viewport size
