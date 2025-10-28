@@ -9,7 +9,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "postbuild": "cp build/index.html build/404.html"
+    "postbuild": "cp dist/index.html dist/404.html"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
