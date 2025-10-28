@@ -13,6 +13,8 @@ import ShapesPanel from './components/ShapesPanel/ShapesPanel'
 import LayersPanel from './components/LayersPanel/LayersPanel'
 import UndoRedoToolbar from './components/UndoRedoToolbar/UndoRedoToolbar'
 import Loader from './components/Loader/Loader'
+import CommentPanel from './components/CommentPanel/CommentPanel'
+import ShareModal from './components/ShareModal/ShareModal'
 import { updateSelectedElementColor } from './store/canvasSlice'
 import { loadCanvas, updateCanvas } from './services/canvasApi'
 import type { RootState } from './store/store'
@@ -827,6 +829,12 @@ function Editor() {
         )}
 
         <LayersPanel />
+
+        {/* Comment Panel */}
+        <CommentPanel canvasId={id} />
+
+        {/* Share Modal */}
+        <ShareModal canvasId={id} canvasTitle={canvasTitle} />
       </div>
     </div>
   )

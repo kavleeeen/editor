@@ -187,3 +187,104 @@ export const shareCanvas = async (canvasId: string, userId: string): Promise<any
   return response.json();
 };
 
+// Comment API functions
+export interface Comment {
+  id: string;
+  authorId: string;
+  timestamp: number;
+  text: string;
+}
+
+export interface CreateCommentResponse {
+  success: boolean;
+  message: string;
+  data?: Comment;
+}
+
+export interface FetchCommentsResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    comments: Comment[];
+  };
+}
+
+export const createComment = async (canvasId: string, comment: Comment): Promise<CreateCommentResponse> => {
+  const headers = getAuthHeaders();
+
+  const response = await fetch(`${API_BASE_URL}/canvas/${canvasId}/comments`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(comment),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to create comment: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+export const fetchComments = async (canvasId: string): Promise<FetchCommentsResponse> => {
+  const headers = getAuthHeaders();
+
+  const response = await fetch(`${API_BASE_URL}/canvas/${canvasId}/comments`, {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch comments: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// User management functions
+export interface User {
+  _id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FetchUsersResponse {
+  success: boolean;
+  message: string;
+  data: User[];
+}
+
+export const fetchUsers = async (limit = 50, offset = 0): Promise<FetchUsersResponse> => {
+  const headers = getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/canvas/users?limit=${limit}&offset=${offset}`, {
+    headers,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch users: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// Share canvas functions
+export const shareCanvasMultiple = async (
+  canvasId: string,
+  userIds: string[],
+  role: 'editor' | 'viewer' | 'owner'
+): Promise<any> => {
+  const headers = getAuthHeaders();
+  const response = await fetch(`${API_BASE_URL}/canvas/share-multiple`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ canvasId, userIds, role }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to share canvas: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+

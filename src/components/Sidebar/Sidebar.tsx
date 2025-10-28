@@ -1,6 +1,7 @@
 import { Image, Textbox } from 'fabric';
 import { BsTextParagraph, BsImage, BsSquare, BsDownload, BsShare } from 'react-icons/bs';
-import { shareCanvas } from '../../services/canvasApi';
+import { useDispatch } from 'react-redux';
+import { openShareModal } from '../../store/canvasSlice';
 import { uploadFile } from '../../services/uploadApi';
 import './Sidebar.css';
 import type { ExtendedCanvas } from '../../types/canvas';
@@ -12,6 +13,7 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ onShapesClick, canvasId, canvasTitle }: SidebarProps) => {
+  const dispatch = useDispatch();
   const addText = () => {
     const canvas = (window as any).fabricCanvas as ExtendedCanvas;
     if (!canvas) return;
@@ -133,15 +135,8 @@ const Sidebar = ({ onShapesClick, canvasId, canvasTitle }: SidebarProps) => {
     link.click();
   };
 
-  const handleShare = async () => {
-    try {
-      const userId = '68ffa7c696203598ebc20953'; // Hardcoded user ID
-      await shareCanvas(canvasId, userId);
-      alert('Canvas shared successfully!');
-    } catch (error) {
-      console.error('Error sharing canvas:', error);
-      alert('Failed to share canvas. Please try again.');
-    }
+  const handleShare = () => {
+    dispatch(openShareModal());
   };
 
   return (

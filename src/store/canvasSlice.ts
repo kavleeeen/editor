@@ -7,11 +7,44 @@ interface SelectedElement {
   color?: string;
 }
 
+interface User {
+  _id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ShareModalState {
+  isOpen: boolean;
+  users: User[];
+  selectedUsers: string[];
+  selectedRole: 'editor' | 'viewer' | 'owner';
+  loading: boolean;
+  sharing: boolean;
+  error: string | null;
+}
+
+interface CommentPersistenceState {
+  isInitialized: boolean;
+  savingComments: string[]; // Track which comments are being saved (changed from Set to array)
+  error: string | null;
+}
+
+interface UserState {
+  users: User[];
+  loading: boolean;
+  error: string | null;
+}
+
 interface CanvasState {
   canvasState: string | null;
   selectedElement: SelectedElement | null;
   history: string[];
   historyIndex: number;
+  shareModal: ShareModalState;
+  commentPersistence: CommentPersistenceState;
+  users: UserState;
 }
 
 const initialState: CanvasState = {
@@ -19,6 +52,25 @@ const initialState: CanvasState = {
   selectedElement: null,
   history: [],
   historyIndex: -1,
+  shareModal: {
+    isOpen: false,
+    users: [],
+    selectedUsers: [],
+    selectedRole: 'editor',
+    loading: false,
+    sharing: false,
+    error: null,
+  },
+  commentPersistence: {
+    isInitialized: false,
+    savingComments: [],
+    error: null,
+  },
+  users: {
+    users: [],
+    loading: false,
+    error: null,
+  },
 };
 
 const canvasSlice = createSlice({
@@ -166,6 +218,76 @@ const canvasSlice = createSlice({
       state.history = [];
       state.historyIndex = -1;
     },
+    // Share Modal Actions
+    openShareModal: (state) => {
+      state.shareModal.isOpen = true;
+      state.shareModal.error = null;
+    },
+    closeShareModal: (state) => {
+      state.shareModal.isOpen = false;
+      state.shareModal.selectedUsers = [];
+      state.shareModal.selectedRole = 'editor';
+      state.shareModal.error = null;
+    },
+    setShareModalUsers: (state, action: PayloadAction<User[]>) => {
+      state.shareModal.users = action.payload;
+    },
+    setShareModalLoading: (state, action: PayloadAction<boolean>) => {
+      state.shareModal.loading = action.payload;
+    },
+    setShareModalSharing: (state, action: PayloadAction<boolean>) => {
+      state.shareModal.sharing = action.payload;
+    },
+    setShareModalError: (state, action: PayloadAction<string | null>) => {
+      state.shareModal.error = action.payload;
+    },
+    toggleSelectedUser: (state, action: PayloadAction<string>) => {
+      const userId = action.payload;
+      const selectedUsers = state.shareModal.selectedUsers;
+      if (selectedUsers.includes(userId)) {
+        state.shareModal.selectedUsers = selectedUsers.filter(id => id !== userId);
+      } else {
+        state.shareModal.selectedUsers = [...selectedUsers, userId];
+      }
+    },
+    setSelectedRole: (state, action: PayloadAction<'editor' | 'viewer' | 'owner'>) => {
+      state.shareModal.selectedRole = action.payload;
+    },
+
+    // Comment persistence reducers
+    setCommentPersistenceInitialized: (state, action: PayloadAction<boolean>) => {
+      state.commentPersistence.isInitialized = action.payload;
+    },
+    addSavingComment: (state, action: PayloadAction<string>) => {
+      if (!state.commentPersistence.savingComments.includes(action.payload)) {
+        state.commentPersistence.savingComments.push(action.payload);
+      }
+    },
+    removeSavingComment: (state, action: PayloadAction<string>) => {
+      state.commentPersistence.savingComments = state.commentPersistence.savingComments.filter(
+        id => id !== action.payload
+      );
+    },
+    setCommentPersistenceError: (state, action: PayloadAction<string | null>) => {
+      state.commentPersistence.error = action.payload;
+    },
+    clearCommentPersistenceError: (state) => {
+      state.commentPersistence.error = null;
+    },
+
+    // User management reducers
+    setUsersLoading: (state, action: PayloadAction<boolean>) => {
+      state.users.loading = action.payload;
+    },
+    setUsers: (state, action: PayloadAction<User[]>) => {
+      state.users.users = action.payload;
+      state.users.loading = false;
+      state.users.error = null;
+    },
+    setUsersError: (state, action: PayloadAction<string | null>) => {
+      state.users.error = action.payload;
+      state.users.loading = false;
+    },
   },
 });
 
@@ -178,7 +300,23 @@ export const {
   saveToHistory,
   undo,
   redo,
-  clearHistory
+  clearHistory,
+  openShareModal,
+  closeShareModal,
+  setShareModalUsers,
+  setShareModalLoading,
+  setShareModalSharing,
+  setShareModalError,
+  toggleSelectedUser,
+  setSelectedRole,
+  setCommentPersistenceInitialized,
+  addSavingComment,
+  removeSavingComment,
+  setCommentPersistenceError,
+  clearCommentPersistenceError,
+  setUsersLoading,
+  setUsers,
+  setUsersError
 } = canvasSlice.actions;
 export default canvasSlice.reducer;
 

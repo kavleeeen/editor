@@ -129,7 +129,7 @@ export const getUserFromToken = (): User | null => {
     // Return user information if available
     if (userData && userData.name && userData.email) {
       return {
-        id: userData.id || userData.sub || '',
+        id: userData.userId || userData.sub || '',
         email: userData.email,
         name: userData.name
       };
