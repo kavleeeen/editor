@@ -17,6 +17,8 @@ import CommentPanel from './components/CommentPanel/CommentPanel'
 import ShareModal from './components/ShareModal/ShareModal'
 import { updateSelectedElementColor } from './store/canvasSlice'
 import { loadCanvas, updateCanvas } from './services/canvasApi'
+import { uploadFile } from './services/uploadApi'
+import { canvasToPngFile } from './utils/canvasToPng'
 import type { RootState } from './store/store'
 import { colors } from './constants/colors'
 import './Editor.css'
@@ -70,11 +72,28 @@ function Editor() {
         return
       }
 
+      // Convert canvas to PNG and upload it
+      let imageUrl: string | undefined
+      try {
+        const pngFile = await canvasToPngFile(canvas, `canvas-${id}-${Date.now()}.png`)
+        const uploadResult = await uploadFile(pngFile)
+        if (uploadResult.success && uploadResult.url) {
+          imageUrl = uploadResult.url
+          console.log('📸 Canvas PNG uploaded successfully:', imageUrl)
+        } else {
+          console.warn('⚠️ PNG upload failed, proceeding without imageUrl')
+        }
+      } catch (uploadError) {
+        console.error('❌ PNG upload error:', uploadError)
+        // Continue with save even if PNG upload fails
+      }
+
       await updateCanvas(id, {
         designData,
         metadata: {
           title: canvasTitle || 'Untitled'
-        }
+        },
+        imageUrl
       })
 
       // Update last saved data
@@ -93,9 +112,27 @@ function Editor() {
       const designData = canvas.toJSON()
         ; (designData as any).width = canvas.getWidth()
         ; (designData as any).height = canvas.getHeight()
+
+      // Convert canvas to PNG and upload it
+      let imageUrl: string | undefined
+      try {
+        const pngFile = await canvasToPngFile(canvas, `canvas-${id}-${Date.now()}.png`)
+        const uploadResult = await uploadFile(pngFile)
+        if (uploadResult.success && uploadResult.url) {
+          imageUrl = uploadResult.url
+          console.log('📸 Canvas PNG uploaded successfully for title save:', imageUrl)
+        } else {
+          console.warn('⚠️ PNG upload failed during title save, proceeding without imageUrl')
+        }
+      } catch (uploadError) {
+        console.error('❌ PNG upload error during title save:', uploadError)
+        // Continue with save even if PNG upload fails
+      }
+
       await updateCanvas(id, {
         designData,
-        metadata: { title: canvasTitle || 'Untitled' }
+        metadata: { title: canvasTitle || 'Untitled' },
+        imageUrl
       })
     } catch (e) {
       console.error('❌ Failed to save title', e)

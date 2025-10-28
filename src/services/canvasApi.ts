@@ -23,6 +23,7 @@ export interface SaveCanvasRequest {
   metadata?: {
     title?: string;
   };
+  imageUrl?: string;
 }
 
 export interface GetCanvasResponse {
@@ -139,6 +140,7 @@ export interface CanvasListItem {
     updatedAt?: string;
     version?: string;
   };
+  imageUrl?: string;
 }
 
 export interface PaginationInfo {

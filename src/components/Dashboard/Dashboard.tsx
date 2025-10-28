@@ -113,7 +113,26 @@ const Dashboard = () => {
                   onClick={() => handleCanvasClick(canvasId)}
                 >
                   <div className="canvas-card-preview">
-                    <div className="canvas-placeholder">
+                    {canvas.imageUrl ? (
+                      <img
+                        src={canvas.imageUrl}
+                        alt={canvas.metadata?.title || 'Design thumbnail'}
+                        className="canvas-thumbnail"
+                        onError={(e) => {
+                          // Fallback to placeholder if image fails to load
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const placeholder = target.nextElementSibling as HTMLElement;
+                          if (placeholder) {
+                            placeholder.style.display = 'flex';
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className="canvas-placeholder"
+                      style={{ display: canvas.imageUrl ? 'none' : 'flex' }}
+                    >
                       {canvas.metadata?.title?.[0]?.toUpperCase() || 'D'}
                     </div>
                   </div>
