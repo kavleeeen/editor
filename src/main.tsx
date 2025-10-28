@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate, BrowserRouter } from 'react-router-dom'
 import { Provider } from 'react-redux'
 import './index.css'
 import Dashboard from './components/Dashboard/Dashboard'
@@ -10,7 +10,7 @@ import { store } from './store/store'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <HashRouter>
+    <BrowserRouter>
       <Provider store={store}>
         <Routes>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -23,15 +23,15 @@ createRoot(document.getElementById('root')!).render(
             }
           />
           <Route
-            path="/editor/:id" 
+            path="/editor/:id"
             element={
               <ProtectedRoute>
                 <Editor />
               </ProtectedRoute>
-            } 
+            }
           />
         </Routes>
       </Provider>
-    </HashRouter>
+    </BrowserRouter>
   </StrictMode>,
 )
