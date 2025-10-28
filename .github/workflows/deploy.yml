@@ -48,6 +48,8 @@ jobs:
           if [ -f CNAME ]; then
             cp CNAME dist/CNAME
           fi
+          # ensure GitHub Pages does not run Jekyll
+          touch dist/.nojekyll
       - name: Setup Pages
         uses: actions/configure-pages@v4
       - name: Upload artifact
