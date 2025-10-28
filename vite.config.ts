@@ -7,5 +7,6 @@ export default defineConfig({
   // Set the correct base for GitHub Pages project site deployment
   // If deploying to https://<user>.github.io/Editor/ use '/Editor/'
   // If using a custom domain (CNAME) at the root, change this to '/'
-  base: '/',
+  // Use relative base for GitHub Pages robustness (works for custom domains and subpaths)
+  base: './',
 })
