@@ -1,6 +1,5 @@
 import { Canvas, Image, Textbox } from 'fabric';
-import { useNavigate } from 'react-router-dom';
-import { BsTextParagraph, BsImage, BsSquare, BsDownload, BsSave, BsFolder, BsHouse, BsShare } from 'react-icons/bs';
+import { BsTextParagraph, BsImage, BsSquare, BsDownload, BsSave, BsFolder, BsShare } from 'react-icons/bs';
 import { shareCanvas, updateCanvas } from '../../services/canvasApi';
 import './Sidebar.css';
 
@@ -10,7 +9,6 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ onShapesClick, canvasId }: SidebarProps) => {
-  const navigate = useNavigate();
   const addText = () => {
     const canvas = (window as any).fabricCanvas as Canvas;
     if (!canvas) return;
@@ -189,11 +187,7 @@ const Sidebar = ({ onShapesClick, canvasId }: SidebarProps) => {
   return (
     <>
       <div className="sidebar">
-        <div className="sidebar-header">
-          <button className="sidebar-home-btn" onClick={() => navigate('/')} title="Home">
-            <BsHouse className="sidebar-icon" />
-          </button>
-        </div>
+        <div className="sidebar-header" />
 
         <div className="sidebar-section">
           <h3 className="sidebar-title">Elements</h3>
@@ -216,22 +210,12 @@ const Sidebar = ({ onShapesClick, canvasId }: SidebarProps) => {
 
         <div className="sidebar-section">
           <h3 className="sidebar-title">Export</h3>
-          <button className="sidebar-item" onClick={handleSave}>
-            <BsSave className="sidebar-icon" />
-            <span className="sidebar-label">Save</span>
-          </button>
+
           <button className="sidebar-item" onClick={exportPNG}>
             <BsDownload className="sidebar-icon" />
             <span className="sidebar-label">Export PNG</span>
           </button>
-          <button className="sidebar-item" onClick={exportJSON}>
-            <BsSave className="sidebar-icon" />
-            <span className="sidebar-label">Export JSON</span>
-          </button>
-          <button className="sidebar-item" onClick={loadJSON}>
-            <BsFolder className="sidebar-icon" />
-            <span className="sidebar-label">Load JSON</span>
-          </button>
+
           <button className="sidebar-item" onClick={handleShare}>
             <BsShare className="sidebar-icon" />
             <span className="sidebar-label">Share Canvas</span>

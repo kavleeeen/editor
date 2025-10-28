@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, Navigate } from 'react-router-dom'
+import { useParams, Navigate, useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
@@ -19,6 +19,7 @@ import type { RootState } from './store/store'
 import { colors } from './constants/colors'
 import './Editor.css'
 import { getUserFromToken } from './services/authApi'
+import { BsHouse } from 'react-icons/bs'
 
 type PanelType = 'font' | 'color' | 'shapes' | null
 
@@ -33,6 +34,7 @@ function Editor() {
   const autoSaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dispatch = useDispatch()
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
 
   // Redirect to dashboard if no ID (this should not happen with proper routing)
   if (!id) {
@@ -401,50 +403,113 @@ function Editor() {
 
   return (
     <div className="app">
-      {/* Presence indicator: show other users' initials */}
-      <div style={{ position: 'fixed', top: 10, right: 10, zIndex: 1000, display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,0.75)', color: '#fff', padding: '6px 10px', borderRadius: 6 }}>
-        <div style={{ width: 8, height: 8, borderRadius: '50%', background: connectionStatus === 'connected' ? '#4ade80' : '#ef4444' }} />
-        {connectedPeers.length === 0 ? (
-          <span>You are alone in this :(</span>
-        ) : (
-          <div style={{ display: 'flex', gap: 6 }}>
-            {connectedPeers.map((p) => (
-              <div
-                key={p.id || p.name}
-                title={p.name}
-                style={{
-                  width: 26,
-                  height: 26,
-                  borderRadius: '50%',
-                  background: getPeerColor(p.id || p.name),
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: '#333',
-                  border: '1px solid rgba(255,255,255,0.3)'
-                }}
-              >
-                {p.initials}
-              </div>
-            ))}
+      {/* Unified Sticky Toolbar */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1000,
+        background: '#fff',
+        borderBottom: '1px solid #e5e7eb',
+        padding: '8px 16px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+      }}>
+        {/* Left: Home */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            onClick={() => navigate('/')}
+            title="Home"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 140, height: 32,
+              borderRadius: 6,
+              color: '#000',
+              border: '1px solid #e5e7eb',
+              background: '#fff',
+              cursor: 'pointer',
+              fontSize: 18,
+              gap: 8
+            }}
+          >
+            Home  <BsHouse />
+          </button>
+        </div>
+
+        {/* Center: Element controls only */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+          <ElementToolbar onFontClick={handleFontClick} onColorClick={handleColorClick} />
+        </div>
+
+        {/* Right side: Undo/Redo, then Connection Status & Presence */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Undo/Redo to the left of connection status */}
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <UndoRedoToolbar canvas={(window as any).fabricCanvas as any} isLoadingCanvas={isLoadingCanvas} />
           </div>
-        )}
+
+          {/* Gap between undo/redo and status */}
+          <div style={{ width: 24 }} />
+
+          {/* Connection Status */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', color: '#6b7280' }}>
+            <div style={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              background: connectionStatus === 'connected' ? '#10b981' : '#ef4444'
+            }} />
+            <span>{connectionStatus}</span>
+          </div>
+
+          {/* Presence: show other users' initials */}
+          {connectedPeers.length === 0 ? (
+            <span style={{ fontSize: '14px', color: '#9ca3af' }}>You are alone in this :(</span>
+          ) : (
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {connectedPeers.map((p) => (
+                  <div
+                    key={p.id || p.name}
+                    title={p.name}
+                    style={{
+                      width: 28,
+                      height: 28,
+                      borderRadius: '50%',
+                      background: getPeerColor(p.id || p.name),
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: '#333',
+                      border: '2px solid #fff',
+                      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+                    }}
+                  >
+                    {p.initials}
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Loading overlay */}
-      {isLoadingCanvas && <Loader title="Loading Canvas" text="Preparing your editor..." />}
+      <div style={{ paddingTop: '60px' }}>
+        {/* Loading overlay */}
+        {isLoadingCanvas && <Loader title="Loading Canvas" text="Preparing your editor..." />}
 
-      <Sidebar onShapesClick={handleShapesClick} canvasId={id} />
-      <div className="main-content">
-        <ElementToolbar onFontClick={handleFontClick} onColorClick={handleColorClick} />
-      </div>
+        <Sidebar onShapesClick={handleShapesClick} canvasId={id} />
+        <div className="main-content">
+          {/* ElementToolbar moved to sticky toolbar above */}
+        </div>
 
-      <div className={`canvas-viewport ${activePanel ? 'with-panel' : ''}`}>
-        <Canvas wrapperRef={canvasWrapperRef} />
-      </div>
-      <UndoRedoToolbar canvas={(window as any).fabricCanvas as any} />
+        <div className={`canvas-viewport ${activePanel ? 'with-panel' : ''}`}>
+          <Canvas wrapperRef={canvasWrapperRef} />
+        </div>
+
 
       {activePanel === 'font' && (
         <Panel title="Font" onClose={closePanel}>
@@ -522,7 +587,8 @@ function Editor() {
         <ShapesPanel onClose={closePanel} />
       )}
 
-      <LayersPanel />
+        <LayersPanel />
+      </div>
     </div>
   )
 }

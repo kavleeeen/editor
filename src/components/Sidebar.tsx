@@ -173,14 +173,7 @@ const Sidebar = ({ onShapesClick }: SidebarProps) => {
             <BsDownload className="sidebar-icon" />
             <span className="sidebar-label">Export PNG</span>
           </button>
-          <button className="sidebar-item" onClick={exportJSON}>
-            <BsSave className="sidebar-icon" />
-            <span className="sidebar-label">Export JSON</span>
-          </button>
-          <button className="sidebar-item" onClick={loadJSON}>
-            <BsFolder className="sidebar-icon" />
-            <span className="sidebar-label">Load JSON</span>
-          </button>
+
         </div>
       </div>
     </>

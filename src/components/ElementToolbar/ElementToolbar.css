@@ -1,17 +1,7 @@
 .element-toolbar {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  border: 1px solid var(--color-border-default);
-  border-radius: 8px;
-  padding: 6px 12px;
   display: flex;
   align-items: center;
   gap: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 9999;
   white-space: nowrap;
 }
 

@@ -3,36 +3,56 @@ import './UndoRedoToolbar.css';
 
 interface UndoRedoToolbarProps {
   canvas?: any;
+  isLoadingCanvas?: boolean;
 }
 
-const UndoRedoToolbar = ({ }: UndoRedoToolbarProps) => {
+const UndoRedoToolbar = ({ isLoadingCanvas = false }: UndoRedoToolbarProps) => {
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
 
   useEffect(() => {
+    // Don't start listening until canvas is loaded
+    if (isLoadingCanvas) return;
+
     const canvas = (window as any).fabricCanvas;
-    if (!canvas) return;
+    const canvasReady = (window as any).canvasReady;
+    if (!canvas || !canvasReady) return;
 
     const updateButtons = () => {
       setCanUndo((canvas.historyUndo?.length || 0) > 0);
       setCanRedo((canvas.historyRedo?.length || 0) > 0);
     };
 
-    // Poll for button state updates since we don't have custom events
-    const interval = setInterval(updateButtons, 100);
+    // Listen to canvas events that affect history
+    const handleHistoryChange = () => {
+      // Small delay to ensure canvas has finished processing
+      setTimeout(updateButtons, 10);
+    };
+
+    // Listen to history events
+    canvas.on('history:undo', handleHistoryChange);
+    canvas.on('history:redo', handleHistoryChange);
+    canvas.on('object:added', handleHistoryChange);
+    canvas.on('object:removed', handleHistoryChange);
+    canvas.on('object:modified', handleHistoryChange);
 
     // Initial update
     updateButtons();
 
     return () => {
-      clearInterval(interval);
+      canvas.off('history:undo', handleHistoryChange);
+      canvas.off('history:redo', handleHistoryChange);
+      canvas.off('object:added', handleHistoryChange);
+      canvas.off('object:removed', handleHistoryChange);
+      canvas.off('object:modified', handleHistoryChange);
     };
-  }, []);
+  }, [isLoadingCanvas]);
 
   const handleUndo = useCallback(() => {
     console.log('⚡ handleUndo clicked');
     const canvas = (window as any).fabricCanvas;
-    if (canvas && canvas.historyUndoAction) {
+    const canvasReady = (window as any).canvasReady;
+    if (canvas && canvasReady && canvas.historyUndoAction) {
       canvas.historyUndoAction(() => {
         if ((canvas as any)._forceSync) {
           (canvas as any)._forceSync();
@@ -44,7 +64,8 @@ const UndoRedoToolbar = ({ }: UndoRedoToolbarProps) => {
   const handleRedo = useCallback(() => {
     console.log('⚡ handleRedo clicked');
     const canvas = (window as any).fabricCanvas;
-    if (canvas && canvas.historyRedoAction) {
+    const canvasReady = (window as any).canvasReady;
+    if (canvas && canvasReady && canvas.historyRedoAction) {
       canvas.historyRedoAction(() => {
         if ((canvas as any)._forceSync) {
           (canvas as any)._forceSync();
