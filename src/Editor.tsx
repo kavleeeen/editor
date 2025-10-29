@@ -79,29 +79,23 @@ function Editor() {
         const uploadResult = await uploadFile(pngFile)
         if (uploadResult.success && uploadResult.url) {
           imageUrl = uploadResult.url
-          console.log('📸 Canvas PNG uploaded successfully:', imageUrl)
         } else {
-          console.warn('⚠️ PNG upload failed, proceeding without imageUrl')
         }
       } catch (uploadError) {
-        console.error('❌ PNG upload error:', uploadError)
         // Continue with save even if PNG upload fails
       }
-
       console.log('🔍 Auto-save debug - canvasTitle:', canvasTitle)
       await updateCanvas(id, {
         designData,
         metadata: {
-          title: canvasTitle || 'Untitled'
+          title: canvasTitle
         },
         imageUrl
       })
 
       // Update last saved data
       lastSavedDataRef.current = currentDataString
-      console.log('💾 Auto-save completed at', new Date().toLocaleTimeString())
     } catch (error) {
-      console.error('❌ Auto-save error:', error)
     }
   }
 
@@ -125,7 +119,6 @@ function Editor() {
           yShared.set('titleSenderId', senderId)
           yShared.set('titleSenderTs', senderTs)
         }, { source: 'title-sync', clientId: senderId })
-        console.log('📝 Title synced through Yjs:', canvasTitle)
       }
 
       // Convert canvas to PNG and upload it
@@ -135,12 +128,9 @@ function Editor() {
         const uploadResult = await uploadFile(pngFile)
         if (uploadResult.success && uploadResult.url) {
           imageUrl = uploadResult.url
-          console.log('📸 Canvas PNG uploaded successfully for title save:', imageUrl)
         } else {
-          console.warn('⚠️ PNG upload failed during title save, proceeding without imageUrl')
         }
       } catch (uploadError) {
-        console.error('❌ PNG upload error during title save:', uploadError)
         // Continue with save even if PNG upload fails
       }
 
@@ -150,7 +140,6 @@ function Editor() {
         imageUrl
       })
     } catch (e) {
-      console.error('❌ Failed to save title', e)
     }
   }
 
@@ -301,13 +290,10 @@ function Editor() {
           // Only sync title from peers after initial load is complete
           if (isInitialLoadComplete) {
             setCanvasTitle(sharedTitle)
-            console.log('📝 Title synced from peer:', sharedTitle)
           } else {
-            console.log('📝 Skipping title sync during initial load')
           }
         }
       } catch (e) {
-        console.warn('⚠️ Failed to sync title:', e)
       }
     }
 
@@ -352,7 +338,6 @@ function Editor() {
           }
         })
       } catch (e) {
-        console.warn('⚠️ Failed to apply inbound canvas json:', e)
       }
     }
 
@@ -396,7 +381,6 @@ function Editor() {
     canvas.on('history:redo', resetTimer)
 
     // Start the initial timer only after initial load is complete
-    console.log('🚀 Starting auto-save timer, canvasTitle:', canvasTitle)
     resetAutoSaveTimer()
 
     return () => {
@@ -431,7 +415,6 @@ function Editor() {
           const initialTitle = result.data?.metadata?.title
           if (initialTitle) {
             setCanvasTitle(initialTitle)
-            console.log('📝 Title set from API (with objects):', initialTitle)
             // Sync the loaded title to Yjs shared state
             const ydoc = (window as any).ydoc
             if (ydoc) {
@@ -443,9 +426,9 @@ function Editor() {
                 yShared.set('titleSenderId', senderId)
                 yShared.set('titleSenderTs', senderTs)
               }, { source: 'title-load', clientId: senderId })
-              console.log('📝 Title loaded from API and synced to Yjs:', initialTitle)
             }
           }
+
           // Wait for canvas to be initialized
           const waitForCanvas = () => {
             const canvas = (window as any).fabricCanvas;
@@ -478,11 +461,9 @@ function Editor() {
                 }, 200);
               }, (fabricObjects: any, error: any) => {
                 if (error) {
-                  console.error('❌ Error loading canvas objects:', error);
                   setIsLoadingCanvas(false);
                   ; (window as any)._suppressCounter = false
                 } else {
-                  console.log('📦 Objects loaded:', fabricObjects?.length);
                 }
               });
             } else {
@@ -497,7 +478,6 @@ function Editor() {
           const initialTitle = result.data?.metadata?.title
           if (initialTitle) {
             setCanvasTitle(initialTitle)
-            console.log('📝 Title set from API (no objects):', initialTitle)
             // Sync the loaded title to Yjs shared state
             const ydoc = (window as any).ydoc
             if (ydoc) {
@@ -509,7 +489,6 @@ function Editor() {
                 yShared.set('titleSenderId', senderId)
                 yShared.set('titleSenderTs', senderTs)
               }, { source: 'title-load', clientId: senderId })
-              console.log('📝 Title loaded from API and synced to Yjs:', initialTitle)
             }
           }
           // No objects to load, just wait for canvas to be ready
@@ -528,9 +507,7 @@ function Editor() {
         }
       } catch (error: any) {
         if (error.message && error.message.includes('404')) {
-          console.log('ℹ️ No saved canvas found, starting fresh');
         } else {
-          console.error('❌ Error loading canvas:', error);
         }
         setIsLoadingCanvas(false);
       }

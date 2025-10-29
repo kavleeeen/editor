@@ -133,7 +133,6 @@ const createHistory = function (canvas: any) {
     this.historyNextState = history;
     this._loadHistory(history, "history:undo", callback);
   } else {
-    console.log('❌ No history to pop');
     this.historyProcessing = false;
   }
 };

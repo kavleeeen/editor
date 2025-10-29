@@ -61,7 +61,6 @@ const UndoRedoToolbar = ({ isLoadingCanvas = false }: UndoRedoToolbarProps) => {
   }, [isLoadingCanvas]);
 
   const handleUndo = useCallback(() => {
-    console.log('⚡ handleUndo clicked');
     const canvas = (window as any).fabricCanvas;
     const canvasReady = (window as any).canvasReady;
     if (canvas && canvasReady && canvas.historyUndoAction) {
@@ -86,7 +85,6 @@ const UndoRedoToolbar = ({ isLoadingCanvas = false }: UndoRedoToolbarProps) => {
   }, []);
 
   const handleRedo = useCallback(() => {
-    console.log('⚡ handleRedo clicked');
     const canvas = (window as any).fabricCanvas;
     const canvasReady = (window as any).canvasReady;
     if (canvas && canvasReady && canvas.historyRedoAction) {

@@ -58,15 +58,12 @@ const Sidebar = ({ onShapesClick, canvasTitle }: SidebarProps) => {
           dispatch(setImageLoading(true));
 
           // Upload the file to the server
-          console.log('Uploading file:', file.name, file.size);
           const uploadResult = await uploadFile(file);
-          console.log('Upload result:', uploadResult);
 
           if (!uploadResult.success || !uploadResult.url) {
             throw new Error(uploadResult.message || 'Upload failed');
           }
 
-          console.log('Loading image from URL:', uploadResult.url);
           // Use the uploaded image URL instead of data URL
           Image.fromURL(uploadResult.url, {
             crossOrigin: 'anonymous'
@@ -104,7 +101,6 @@ const Sidebar = ({ onShapesClick, canvasTitle }: SidebarProps) => {
 
               canvas.add(img);
               canvas.setActiveObject(img);
-              console.log('Image successfully added to canvas');
 
               // Manually trigger history save
               if ((canvas as any)._historySaveAction) {
@@ -115,13 +111,11 @@ const Sidebar = ({ onShapesClick, canvasTitle }: SidebarProps) => {
               dispatch(setImageLoading(false));
             })
             .catch((error) => {
-              console.error('Error loading image:', error);
               alert('Failed to load image. Please try another image.');
               // Set loading state to false on error
               dispatch(setImageLoading(false));
             });
         } catch (error) {
-          console.error('Error uploading image:', error);
           alert('Failed to upload image. Please try again.');
           // Set loading state to false on error
           dispatch(setImageLoading(false));

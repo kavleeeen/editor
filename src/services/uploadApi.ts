@@ -45,13 +45,11 @@ export const uploadFile = async (file: File): Promise<UploadResponse> => {
     const result = await response.json();
 
     if (result.success) {
-      console.log('File uploaded successfully:', result.url);
       return result;
     } else {
       throw new Error(result.message || 'Upload failed');
     }
   } catch (error) {
-    console.error('Upload error:', error);
     throw error;
   }
 };
