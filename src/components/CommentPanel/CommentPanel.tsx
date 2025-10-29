@@ -11,7 +11,7 @@ import {
   fetchCommentsAsync
 } from '../../store/canvasSlice'
 import type { AppDispatch } from '../../store/store'
-import { selectCommentPersistenceInitialized, selectSavingComments, selectUsersList } from '../../store/selectors'
+import { selectSavingComments, selectUsersList } from '../../store/selectors'
 import './CommentPanel.css'
 
 interface CommentPanelProps {
@@ -28,7 +28,8 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Redux state for comment persistence
-  const isInitialized = useSelector(selectCommentPersistenceInitialized)
+  // retained selector if needed later; no longer used after moving guarded load into Yjs setup
+  // const isInitialized = useSelector(selectCommentPersistenceInitialized)
   const savingComments = useSelector(selectSavingComments)
   const users = useSelector(selectUsersList)
   const currentUser = getUserFromToken();
@@ -60,35 +61,8 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
     }
   }, [isOpen])
 
-  // Initial comment loading (only once when canvas loads)
-  useEffect(() => {
-    if (!canvasId || isInitialized) return
-
-    const loadInitialComments = async () => {
-      try {
-        dispatch(clearCommentPersistenceError())
-        const loadedComments = await dispatch(fetchCommentsAsync(canvasId)).unwrap()
-
-        // Load comments into Yjs array
-        const ydoc = (window as any).ydoc
-        if (ydoc) {
-          const yComments = ydoc.getArray(`comments-${canvasId}`)
-          // Clear existing comments and add loaded ones
-          yComments.delete(0, yComments.length)
-          if (Array.isArray(loadedComments) && loadedComments.length > 0) {
-            // Push as a single batch to avoid multiple updates
-            yComments.push(loadedComments)
-          }
-          // Comments will be reflected via the Yjs observer below
-        }
-      } catch (error) {
-        console.error('Failed to load initial comments:', error)
-        dispatch(setCommentPersistenceError('Failed to load comments'))
-      }
-    }
-
-    loadInitialComments()
-  }, [canvasId, isInitialized, dispatch])
+  // Initial comment loading is coordinated via Yjs to avoid duplicates across clients
+  // We defer loading until Y.Doc is ready and guard with a shared flag in Y.Map
 
   // Yjs integration for real-time comments
   useEffect(() => {
@@ -104,6 +78,7 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
 
       // Create shared array for comments
       const yComments = ydoc.getArray(`comments-${canvasId}`)
+      const metaMap = ydoc.getMap('comments-meta')
       setIsConnected(true)
 
       // Update comments when Yjs array changes
@@ -116,6 +91,40 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
 
       // Initial load
       updateComments()
+
+      // Load persisted comments only once across all clients
+      const loadedKey = `loaded-${canvasId}`
+      const tryLoadOnce = async () => {
+        try {
+          // Only one client should perform the initial fetch+push
+          if (metaMap.get(loadedKey) === true) return
+
+          // Optimistic lock: mark as loading to prevent races
+          ydoc.transact(() => {
+            if (metaMap.get(loadedKey) !== true) {
+              metaMap.set(loadedKey, true)
+            }
+          })
+
+          dispatch(clearCommentPersistenceError())
+          const loadedComments = await dispatch(fetchCommentsAsync(canvasId)).unwrap()
+
+          if (Array.isArray(loadedComments) && loadedComments.length > 0) {
+            // Avoid duplicating comments that might already exist in the array
+            const existingIds = new Set((yComments.toArray() as Comment[]).map(c => c.id))
+            const toAdd = (loadedComments as Comment[]).filter(c => !existingIds.has(c.id))
+            if (toAdd.length > 0) {
+              yComments.push(toAdd)
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load initial comments:', error)
+          dispatch(setCommentPersistenceError('Failed to load comments'))
+        }
+      }
+
+      // Kick off the guarded load
+      tryLoadOnce()
 
       // Observe changes
       yComments.observe(updateComments)
