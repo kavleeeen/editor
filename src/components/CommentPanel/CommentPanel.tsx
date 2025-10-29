@@ -31,12 +31,13 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
   const isInitialized = useSelector(selectCommentPersistenceInitialized)
   const savingComments = useSelector(selectSavingComments)
   const users = useSelector(selectUsersList)
+  const currentUser = getUserFromToken();
 
   // Convert users from store to mention format
   const mentionUsers = users.map(user => ({
     id: user._id,
     display: user.name
-  }))
+  }))?.filter((user: any) => user.id !== currentUser?.id)
 
   // Fetch users when component mounts
   useEffect(() => {

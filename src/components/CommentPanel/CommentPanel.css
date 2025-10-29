@@ -284,6 +284,14 @@
   color: #1f2937;
 }
 
+/* Force suggestions dropdown to appear above the input */
+.mentions .mentions__suggestions {
+  top: auto !important;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: auto;
+  z-index: 2000;
+}
 .mentions .mentions__suggestions__item {
   padding: 8px 10px;
   cursor: pointer;
