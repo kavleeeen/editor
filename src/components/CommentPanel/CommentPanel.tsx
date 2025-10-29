@@ -32,7 +32,7 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
   const savingComments = useSelector(selectSavingComments)
   const users = useSelector(selectUsersList)
   const currentUser = getUserFromToken();
-
+  //only show users that are not the current user
   // Convert users from store to mention format
   const mentionUsers = users.map(user => ({
     id: user._id,
