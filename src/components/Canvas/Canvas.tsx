@@ -376,12 +376,16 @@ const EditorCanvas = ({ addElementCallback, wrapperRef }: CanvasProps) => {
       canvas.on('mouse:dblclick', (event) => {
         const target = event.target;
         if (target && target.type === 'textbox') {
+          // Cast to any to access text-specific methods
+          const textTarget = target as any;
           // Enter editing mode
-          target.enterEditing();
+          if (textTarget.enterEditing) {
+            textTarget.enterEditing();
+          }
           // Ensure the hidden textarea gets focus
           setTimeout(() => {
-            if (target.hiddenTextarea) {
-              target.hiddenTextarea.focus();
+            if (textTarget.hiddenTextarea) {
+              textTarget.hiddenTextarea.focus();
             }
           }, 10);
         }
