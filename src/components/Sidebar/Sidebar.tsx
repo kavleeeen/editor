@@ -110,7 +110,7 @@ const Sidebar = ({ onShapesClick, canvasTitle }: SidebarProps) => {
               // Set loading state to false
               dispatch(setImageLoading(false));
             })
-            .catch((error) => {
+            .catch(() => {
               alert('Failed to load image. Please try another image.');
               // Set loading state to false on error
               dispatch(setImageLoading(false));

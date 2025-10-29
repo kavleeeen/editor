@@ -459,7 +459,7 @@ function Editor() {
                   // Re-enable counter after initial load settles
                   setTimeout(() => { (window as any)._suppressCounter = false }, 50)
                 }, 200);
-              }, (fabricObjects: any, error: any) => {
+              }, (error: any) => {
                 if (error) {
                   setIsLoadingCanvas(false);
                   ; (window as any)._suppressCounter = false
