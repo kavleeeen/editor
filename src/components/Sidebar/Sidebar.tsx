@@ -1,7 +1,7 @@
 import { Image, Textbox } from 'fabric';
 import { BsTextParagraph, BsImage, BsSquare, BsDownload, BsShare } from 'react-icons/bs';
 import { useDispatch } from 'react-redux';
-import { openShareModal } from '../../store/canvasSlice';
+import { openShareModal, setImageLoading } from '../../store/canvasSlice';
 import { uploadFile } from '../../services/uploadApi';
 import './Sidebar.css';
 import type { ExtendedCanvas } from '../../types/canvas';
@@ -21,6 +21,9 @@ const Sidebar = ({ onShapesClick, canvasTitle }: SidebarProps) => {
     const text = new Textbox('Click to edit', {
       width: 200,
       fontSize: 20,
+      editable: true, // Ensure text is editable
+      cursorDuration: 1000, // Duration of cursor fade-in in milliseconds
+      cursorDelay: 500, // Delay between cursor blinks in milliseconds
     });
 
     // Assign unique ID for CRDT sync
@@ -51,6 +54,9 @@ const Sidebar = ({ onShapesClick, canvasTitle }: SidebarProps) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (file) {
         try {
+          // Set loading state to true
+          dispatch(setImageLoading(true));
+
           // Upload the file to the server
           console.log('Uploading file:', file.name, file.size);
           const uploadResult = await uploadFile(file);
@@ -104,14 +110,21 @@ const Sidebar = ({ onShapesClick, canvasTitle }: SidebarProps) => {
               if ((canvas as any)._historySaveAction) {
                 (canvas as any)._historySaveAction({ target: null });
               }
+
+              // Set loading state to false
+              dispatch(setImageLoading(false));
             })
             .catch((error) => {
               console.error('Error loading image:', error);
               alert('Failed to load image. Please try another image.');
+              // Set loading state to false on error
+              dispatch(setImageLoading(false));
             });
         } catch (error) {
           console.error('Error uploading image:', error);
           alert('Failed to upload image. Please try again.');
+          // Set loading state to false on error
+          dispatch(setImageLoading(false));
         }
       }
     };

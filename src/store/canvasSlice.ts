@@ -43,6 +43,7 @@ interface UIState {
   activePanel: 'font' | 'color' | 'shapes' | null;
   layersCollapsed: boolean;
   editingLayerId: string | null;
+  imageLoading: boolean;
 }
 
 interface CanvasState {
@@ -84,6 +85,7 @@ const initialState: CanvasState = {
     activePanel: null,
     layersCollapsed: false,
     editingLayerId: null,
+    imageLoading: false,
   },
 };
 
@@ -330,6 +332,9 @@ const canvasSlice = createSlice({
     setEditingLayerId: (state, action: PayloadAction<string | null>) => {
       state.ui.editingLayerId = action.payload;
     },
+    setImageLoading: (state, action: PayloadAction<boolean>) => {
+      state.ui.imageLoading = action.payload;
+    },
   },
   extraReducers: (builder) => {
     // Fetch Users
@@ -431,7 +436,8 @@ export const {
   setUsersError,
   setActivePanel,
   setLayersCollapsed,
-  setEditingLayerId
+  setEditingLayerId,
+  setImageLoading
 } = canvasSlice.actions;
 export default canvasSlice.reducer;
 

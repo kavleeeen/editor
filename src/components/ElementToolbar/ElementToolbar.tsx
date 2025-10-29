@@ -28,6 +28,7 @@ const ElementToolbar = ({ onFontClick, onColorClick }: ElementToolbarProps) => {
 
   const obj = activeObj;
   const isText = selectedElement.type === 'textbox';
+  const isImage = selectedElement.type === 'image';
 
   const handleFontSizeChange = (delta: number) => {
     if (isText && obj.type === 'textbox') {
@@ -83,7 +84,7 @@ const ElementToolbar = ({ onFontClick, onColorClick }: ElementToolbarProps) => {
   };
 
   const toggleBorder = () => {
-    if (!isText) {
+    if (!isText && !isImage) {
       const currentStrokeWidth = (obj as any).strokeWidth || 0;
       const currentFill = (obj as any).fill;
 
@@ -115,7 +116,7 @@ const ElementToolbar = ({ onFontClick, onColorClick }: ElementToolbarProps) => {
   };
 
   const toggleFill = () => {
-    if (!isText) {
+    if (!isText && !isImage) {
       const currentFill = (obj as any).fill;
       const currentStrokeWidth = (obj as any).strokeWidth || 0;
 
@@ -258,9 +259,9 @@ const ElementToolbar = ({ onFontClick, onColorClick }: ElementToolbarProps) => {
       <div className="toolbar-group">
         <Tooltip title="Toggle Border" arrow placement="bottom">
           <button
-            className={`toolbar-btn ${!isText && (obj as any).strokeWidth > 0 ? 'active-muted' : ''}`}
+            className={`toolbar-btn ${!isText && !isImage && (obj as any).strokeWidth > 0 ? 'active-muted' : ''}`}
             onClick={toggleBorder}
-            disabled={isText || (obj as any).fill === 'transparent'}
+            disabled={isText || isImage || (obj as any).fill === 'transparent'}
           >
             <RxBorderAll />
           </button>
@@ -271,9 +272,9 @@ const ElementToolbar = ({ onFontClick, onColorClick }: ElementToolbarProps) => {
       <div className="toolbar-group">
         <Tooltip title="Toggle Fill" arrow placement="bottom">
           <button
-            className={`toolbar-btn ${!isText && (obj as any).fill !== 'transparent' ? 'active-muted' : ''}`}
+            className={`toolbar-btn ${!isText && !isImage && (obj as any).fill !== 'transparent' ? 'active-muted' : ''}`}
             onClick={toggleFill}
-            disabled={isText || ((obj as any).strokeWidth || 0) === 0}
+            disabled={isText || isImage || ((obj as any).strokeWidth || 0) === 0}
           >
             <BsPalette />
           </button>

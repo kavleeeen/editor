@@ -9,4 +9,93 @@
     transition: transform 0.1s ease-out;
 }
 
+.image-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.image-loading-spinner {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 12px;
+}
+
+.image-loading-spinner .spinner-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 3px solid transparent;
+  border-radius: 50%;
+  animation: ring-spin 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+}
+
+.image-loading-spinner .spinner-ring:nth-child(1) {
+  background: conic-gradient(from 0deg,
+      #2196F3,
+      #4CAF50,
+      #FFC107,
+      #2196F3);
+  -webkit-mask: radial-gradient(farthest-side, transparent 70%, white 70%);
+  mask: radial-gradient(farthest-side, transparent 70%, white 70%);
+  animation-delay: 0s;
+}
+
+.image-loading-spinner .spinner-ring:nth-child(2) {
+  background: conic-gradient(from 120deg,
+      #FF9800,
+      #E91E63,
+      #9C27B0,
+      #FF9800);
+  -webkit-mask: radial-gradient(farthest-side, transparent 76%, white 76%);
+  mask: radial-gradient(farthest-side, transparent 76%, white 76%);
+  animation-delay: 0.2s;
+  animation-duration: 1.8s;
+}
+
+.image-loading-spinner .spinner-ring:nth-child(3) {
+  background: conic-gradient(from 240deg,
+      #00BCD4,
+      #8BC34A,
+      #CDDC39,
+      #00BCD4);
+  -webkit-mask: radial-gradient(farthest-side, transparent 82%, white 82%);
+  mask: radial-gradient(farthest-side, transparent 82%, white 82%);
+  animation-delay: 0.4s;
+  animation-duration: 2s;
+}
+
+.image-loading-text {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+  font-weight: 500;
+}
+
+@keyframes ring-spin {
+  0% {
+    transform: rotate(0deg);
+    border-width: 3px;
+  }
+
+  50% {
+    transform: rotate(180deg);
+    border-width: 6px;
+  }
+
+  100% {
+    transform: rotate(360deg);
+    border-width: 3px;
+  }
+}
 

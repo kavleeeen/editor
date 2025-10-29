@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Canvas as FabricCanvas } from 'fabric';
 import type { Canvas } from 'fabric';
 import { setSelectedElement } from '../../store/canvasSlice';
@@ -195,6 +195,7 @@ const EditorCanvas = ({ addElementCallback, wrapperRef }: CanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<Canvas | null>(null);
   const dispatch = useDispatch();
+  const imageLoading = useSelector((state: any) => state.canvas.ui.imageLoading);
 
   useEffect(() => {
     if (canvasRef.current) {
@@ -293,6 +294,15 @@ const EditorCanvas = ({ addElementCallback, wrapperRef }: CanvasProps) => {
             transparentCorners: false,
           });
 
+          // Ensure text objects are editable and have proper cursor behavior
+          if (obj.type === 'textbox') {
+            obj.set({
+              editable: true,
+              cursorDuration: 1000, // Duration of cursor fade-in in milliseconds
+              cursorDelay: 500, // Delay between cursor blinks in milliseconds
+            });
+          }
+
           // Clear flag after set
           setTimeout(() => {
             (obj as any).__settingUp = false;
@@ -362,6 +372,21 @@ const EditorCanvas = ({ addElementCallback, wrapperRef }: CanvasProps) => {
         dispatch(setSelectedElement(null));
       });
 
+      // Handle double-click for text editing
+      canvas.on('mouse:dblclick', (event) => {
+        const target = event.target;
+        if (target && target.type === 'textbox') {
+          // Enter editing mode
+          target.enterEditing();
+          // Ensure the hidden textarea gets focus
+          setTimeout(() => {
+            if (target.hiddenTextarea) {
+              target.hiddenTextarea.focus();
+            }
+          }, 10);
+        }
+      });
+
       // Fabric.js native history is already initialized above
       // It automatically handles object:added, object:removed, and object:modified events
 
@@ -373,6 +398,7 @@ const EditorCanvas = ({ addElementCallback, wrapperRef }: CanvasProps) => {
         canvas.off('selection:created');
         canvas.off('selection:updated');
         canvas.off('selection:cleared');
+        canvas.off('mouse:dblclick');
         canvas.off('object:added');
         canvas.off('object:modified');
         canvas.off('object:removed');
@@ -390,6 +416,16 @@ const EditorCanvas = ({ addElementCallback, wrapperRef }: CanvasProps) => {
         tabIndex={0}
         style={{ outline: 'none' }}
       />
+      {imageLoading && (
+        <div className="image-loading-overlay">
+          <div className="image-loading-spinner">
+            <div className="spinner-ring"></div>
+            <div className="spinner-ring"></div>
+            <div className="spinner-ring"></div>
+          </div>
+          <p className="image-loading-text">Uploading image...</p>
+        </div>
+      )}
     </div>
   );
 };

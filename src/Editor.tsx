@@ -555,10 +555,19 @@ function Editor() {
       const canvas = (window as any).fabricCanvas
       if (!canvas) return
 
+      // Check if we're editing text - if so, let Fabric.js handle ALL keyboard events
+      const activeObj = canvas.getActiveObject()
+      if (activeObj && activeObj.type === 'textbox') {
+        const textObj = activeObj as any
+        // If text is in editing mode, don't interfere with any keyboard events
+        if (textObj.isEditing) {
+          return // Let Fabric.js handle all text editing
+        }
+      }
+
       // Delete key - remove selected object
       if (event.key === 'Delete' || event.key === 'Backspace') {
         event.preventDefault()
-        const activeObj = canvas.getActiveObject()
         if (activeObj) {
           canvas.remove(activeObj)
           canvas.renderAll()
@@ -686,11 +695,15 @@ function Editor() {
     // Add event listener to document for global keyboard shortcuts
     document.addEventListener('keydown', handleKeyDown)
 
-    // Also add click handler to focus canvas when clicked
+    // Also add click handler to focus canvas when clicked (but not when editing text)
     const handleCanvasClick = () => {
       const canvas = (window as any).fabricCanvas
       if (canvas && canvas.getElement()) {
-        canvas.getElement().focus()
+        const activeObj = canvas.getActiveObject()
+        // Only focus canvas if we're not editing text
+        if (!activeObj || activeObj.type !== 'textbox' || !(activeObj as any).isEditing) {
+          canvas.getElement().focus()
+        }
       }
     }
 

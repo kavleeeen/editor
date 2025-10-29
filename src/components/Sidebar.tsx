@@ -18,6 +18,9 @@ const Sidebar = ({ onShapesClick, canvasTitle }: SidebarProps) => {
     const text = new Textbox('Click to edit', {
       width: 200,
       fontSize: 20,
+      editable: true, // Ensure text is editable
+      cursorDuration: 1000, // Duration of cursor fade-in in milliseconds
+      cursorDelay: 500, // Delay between cursor blinks in milliseconds
     });
     // Center the text on canvas
     const canvasCenterX = canvas.width! / 2;

@@ -44,6 +44,9 @@ const Toolbar = () => {
       top: 100,
       width: 200,
       fontSize: 20,
+      editable: true, // Ensure text is editable
+      cursorDuration: 1000, // Duration of cursor fade-in in milliseconds
+      cursorDelay: 500, // Delay between cursor blinks in milliseconds
     });
     canvas.add(text);
     canvas.setActiveObject(text);
