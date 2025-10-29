@@ -88,6 +88,7 @@ function Editor() {
         // Continue with save even if PNG upload fails
       }
 
+      console.log('🔍 Auto-save debug - canvasTitle:', canvasTitle)
       await updateCanvas(id, {
         designData,
         metadata: {
@@ -382,7 +383,7 @@ function Editor() {
   // Set up auto-save timer reset on canvas changes
   useEffect(() => {
     const canvas = (window as any).fabricCanvas
-    if (!canvas) return
+    if (!canvas || !isInitialLoadComplete) return
 
     // Reset timer on any canvas action
     const resetTimer = () => resetAutoSaveTimer()
@@ -394,7 +395,8 @@ function Editor() {
     canvas.on('history:undo', resetTimer)
     canvas.on('history:redo', resetTimer)
 
-    // Start the initial timer
+    // Start the initial timer only after initial load is complete
+    console.log('🚀 Starting auto-save timer, canvasTitle:', canvasTitle)
     resetAutoSaveTimer()
 
     return () => {
@@ -409,7 +411,7 @@ function Editor() {
         clearTimeout(autoSaveTimeoutRef.current)
       }
     }
-  }, [isLoadingCanvas]) // Re-run when canvas is loaded
+  }, [isLoadingCanvas, isInitialLoadComplete]) // Re-run when canvas is loaded and initial load is complete
 
   // Load canvas from API on mount
   useEffect(() => {
@@ -429,6 +431,7 @@ function Editor() {
           const initialTitle = result.data?.metadata?.title
           if (initialTitle) {
             setCanvasTitle(initialTitle)
+            console.log('📝 Title set from API (with objects):', initialTitle)
             // Sync the loaded title to Yjs shared state
             const ydoc = (window as any).ydoc
             if (ydoc) {
@@ -494,6 +497,7 @@ function Editor() {
           const initialTitle = result.data?.metadata?.title
           if (initialTitle) {
             setCanvasTitle(initialTitle)
+            console.log('📝 Title set from API (no objects):', initialTitle)
             // Sync the loaded title to Yjs shared state
             const ydoc = (window as any).ydoc
             if (ydoc) {
@@ -861,66 +865,66 @@ function Editor() {
               )}
             </div>
           ) : (
-              <div style={{ position: 'relative' }}>
-                <div
-                  title={titleEditingPeers.length > 0 ? `${titleEditingPeers.map(p => p.name).join(', ')} is editing the title` : "Click to edit"}
-                  onClick={() => {
-                    if (titleEditingPeers.length === 0) {
-                      handleTitleEditStart()
-                    }
-                  }}
-                  style={{
-                    height: 32,
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '0 10px',
-                    borderRadius: 6,
-                    fontSize: 16,
-                    cursor: titleEditingPeers.length > 0 ? 'not-allowed' : 'text',
-                    minWidth: 120,
-                    maxWidth: 360,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    color: titleEditingPeers.length > 0 ? '#9ca3af' : '#1f2937',
-                    opacity: titleEditingPeers.length > 0 ? 0.7 : 1
-                  }}
-                >
-                  {canvasTitle || 'Untitled'}
+            <div style={{ position: 'relative' }}>
+              <div
+                title={titleEditingPeers.length > 0 ? `${titleEditingPeers.map(p => p.name).join(', ')} is editing the title` : "Click to edit"}
+                onClick={() => {
+                  if (titleEditingPeers.length === 0) {
+                    handleTitleEditStart()
+                  }
+                }}
+                style={{
+                  height: 32,
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '0 10px',
+                  borderRadius: 6,
+                  fontSize: 16,
+                  cursor: titleEditingPeers.length > 0 ? 'not-allowed' : 'text',
+                  minWidth: 120,
+                  maxWidth: 360,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  color: titleEditingPeers.length > 0 ? '#9ca3af' : '#1f2937',
+                  opacity: titleEditingPeers.length > 0 ? 0.7 : 1
+                }}
+              >
+                {canvasTitle || 'Untitled'}
+              </div>
+              {/* Show other users editing the title */}
+              {titleEditingPeers.length > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: -8,
+                  right: -8,
+                  display: 'flex',
+                  gap: '2px'
+                }}>
+                  {titleEditingPeers.map((peer) => (
+                    <div
+                      key={peer.id}
+                      title={`${peer.name} is editing the title`}
+                      style={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: '50%',
+                        background: getPeerColor(peer.id),
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 8,
+                        fontWeight: 600,
+                        color: '#333',
+                        border: '1px solid #fff',
+                        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+                      }}
+                    >
+                      {peer.initials}
+                    </div>
+                  ))}
                 </div>
-                {/* Show other users editing the title */}
-                {titleEditingPeers.length > 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    top: -8,
-                    right: -8,
-                    display: 'flex',
-                    gap: '2px'
-                  }}>
-                    {titleEditingPeers.map((peer) => (
-                      <div
-                        key={peer.id}
-                        title={`${peer.name} is editing the title`}
-                        style={{
-                          width: 16,
-                          height: 16,
-                          borderRadius: '50%',
-                          background: getPeerColor(peer.id),
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 8,
-                          fontWeight: 600,
-                          color: '#333',
-                          border: '1px solid #fff',
-                          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
-                        }}
-                      >
-                        {peer.initials}
-                      </div>
-                    ))}
-                  </div>
-                )}
+              )}
             </div>
           )}
         </div>
@@ -946,29 +950,29 @@ function Editor() {
           {connectedPeers.length === 0 ? (
             <span style={{ fontSize: '14px', color: '#9ca3af' }}>You are alone in this :(</span>
           ) : (
-              <div style={{ display: 'flex', gap: '6px' }}>
-                {connectedPeers.map((p) => (
-                  <div
-                    key={p.id || p.name}
-                    title={p.name}
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: '50%',
-                      background: getPeerColor(p.id || p.name),
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: '#333',
-                      border: '2px solid #fff',
-                      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-                    }}
-                  >
-                    {p.initials}
-                  </div>
-                ))}
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {connectedPeers.map((p) => (
+                <div
+                  key={p.id || p.name}
+                  title={p.name}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    background: getPeerColor(p.id || p.name),
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: '#333',
+                    border: '2px solid #fff',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+                  }}
+                >
+                  {p.initials}
+                </div>
+              ))}
             </div>
           )}
         </div>
