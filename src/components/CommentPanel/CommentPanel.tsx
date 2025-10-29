@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { MentionsInput, Mention } from 'react-mentions'
 import { useDispatch, useSelector } from 'react-redux'
 import { getUserFromToken } from '../../services/authApi'
 import { type Comment } from '../../services/canvasApi'
@@ -32,6 +33,12 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
   const persistenceError = useSelector(selectCommentPersistenceError)
   const users = useSelector(selectUsersList)
 
+  // Convert users from store to mention format
+  const mentionUsers = users.map(user => ({
+    id: user._id,
+    display: user.name
+  }))
+
   // Fetch users when component mounts
   useEffect(() => {
     dispatch(fetchUsersAsync())
@@ -60,7 +67,7 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
     const loadInitialComments = async () => {
       try {
         dispatch(clearCommentPersistenceError())
-        await dispatch(fetchCommentsAsync(canvasId)).unwrap()
+        const loadedComments = await dispatch(fetchCommentsAsync(canvasId)).unwrap()
 
         // Load comments into Yjs array
         const ydoc = (window as any).ydoc
@@ -68,7 +75,11 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
           const yComments = ydoc.getArray(`comments-${canvasId}`)
           // Clear existing comments and add loaded ones
           yComments.delete(0, yComments.length)
-          // Note: Comments will be loaded via Yjs observation
+          if (Array.isArray(loadedComments) && loadedComments.length > 0) {
+            // Push as a single batch to avoid multiple updates
+            yComments.push(loadedComments)
+          }
+          // Comments will be reflected via the Yjs observer below
         }
       } catch (error) {
         console.error('Failed to load initial comments:', error)
@@ -157,6 +168,37 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
       handleSendComment()
     }
   }
+  // Render mentions inside comment text in a simple way: @[Display](id) -> @Display
+  const renderCommentText = (text: string) => {
+    const parts: Array<string | { display: string; id: string }> = []
+    const regex = /@\[([^\]]+)\]\(([^)]+)\)/g
+    let lastIndex = 0
+    let match: RegExpExecArray | null
+
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(text.slice(lastIndex, match.index))
+      }
+      parts.push({ display: match[1], id: match[2] })
+      lastIndex = regex.lastIndex
+    }
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex))
+    }
+
+    return (
+      <>
+        {parts.map((part, idx) =>
+          typeof part === 'string' ? (
+            <span key={idx}>{part}</span>
+          ) : (
+            <span key={idx} className="mention-chip">@{part.display}</span>
+          )
+        )}
+      </>
+    )
+  }
+
 
   const formatTimestamp = (timestamp: number) => {
     const date = new Date(timestamp)
@@ -230,15 +272,7 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
         <div className="comment-chat">
           <div className="comment-header">
             <h3>Comments</h3>
-            <div className="connection-status">
-              <div className={`status-dot ${isConnected ? 'connected' : 'disconnected'}`}></div>
-              <span>{isConnected ? 'Connected' : 'Connecting...'}</span>
-              {persistenceError && (
-                <div className="error-indicator" title={persistenceError}>
-                  ⚠️
-                </div>
-              )}
-            </div>
+
           </div>
 
           <div className="comment-messages">
@@ -262,7 +296,7 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
                       <span className="comment-author">{getAuthorName(comment.authorId)}</span>
                       <span className="comment-time">{formatTimestamp(comment.timestamp)}</span>
                     </div>
-                    <div className="comment-text">{comment.text}</div>
+                    <div className="comment-text">{renderCommentText(comment.text)}</div>
                   </div>
                 </div>
               ))
@@ -271,15 +305,24 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
           </div>
 
           <div className="comment-input">
-            <input
-              ref={inputRef}
-              type="text"
+            <MentionsInput
               value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Add a comment..."
+              onChange={(e: any, v: string) => setNewComment(v)}
+              placeholder={isConnected ? 'Add a comment' : 'Connecting...'}
               disabled={!isConnected}
-            />
+              className="mentions"
+              allowSuggestionsAboveCursor={true}
+              inputRef={inputRef as any}
+              onKeyDown={handleKeyPress}
+            >
+              <Mention
+                trigger="@"
+                data={mentionUsers}
+                markup="@[__display__](__id__)"
+                displayTransform={(id: string, display: string) => `@${display}`}
+                className="mentions__mention"
+              />
+            </MentionsInput>
             <button
               onClick={handleSendComment}
               disabled={!newComment.trim() || !isConnected}

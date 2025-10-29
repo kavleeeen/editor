@@ -56,6 +56,7 @@
   position: absolute;
   bottom: 70px;
   right: 0;
+  padding: 1px;
   width: 320px;
   height: 40vh;
   max-height: 500px;
@@ -247,13 +248,68 @@
   cursor: not-allowed;
 }
 
+/* Mentions input styling */
+.mentions {
+  flex: 1;
+}
+
+.mentions .mentions__control {
+  font-size: 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.mentions .mentions__highlighter {
+  padding: 8px 12px;
+}
+
+.mentions .mentions__input {
+  padding: 8px 12px;
+  outline: none;
+  color: #1f2937;
+
+}
+
+.mentions__mention {
+  background-color: rgba(59, 130, 246, 0.15);
+}
+
+.mentions .mentions__suggestions__list {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  color: #1f2937;
+}
+
+.mentions .mentions__suggestions__item {
+  padding: 8px 10px;
+  cursor: pointer;
+  color: #1f2937;
+}
+
+.mentions .mentions__suggestions__item--focused {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+/* Rendered mention chip in messages */
+.mention-chip {
+  background: rgba(59, 130, 246, 0.15);
+  color: #1f2937;
+  padding: 0 4px;
+  border-radius: 4px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .comment-panel {
     bottom: 16px;
     right: 16px;
   }
-  
+
   .comment-chat {
     width: calc(100vw - 32px);
     right: -16px;

@@ -842,66 +842,66 @@ function Editor() {
               )}
             </div>
           ) : (
-              <div style={{ position: 'relative' }}>
-                <div
-                  title={titleEditingPeers.length > 0 ? `${titleEditingPeers.map(p => p.name).join(', ')} is editing the title` : "Click to edit"}
-                  onClick={() => {
-                    if (titleEditingPeers.length === 0) {
-                      handleTitleEditStart()
-                    }
-                  }}
-                  style={{
-                    height: 32,
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '0 10px',
-                    borderRadius: 6,
-                    fontSize: 16,
-                    cursor: titleEditingPeers.length > 0 ? 'not-allowed' : 'text',
-                    minWidth: 120,
-                    maxWidth: 360,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    color: titleEditingPeers.length > 0 ? '#9ca3af' : '#1f2937',
-                    opacity: titleEditingPeers.length > 0 ? 0.7 : 1
-                  }}
-                >
-                  {canvasTitle || 'Untitled'}
+            <div style={{ position: 'relative' }}>
+              <div
+                title={titleEditingPeers.length > 0 ? `${titleEditingPeers.map(p => p.name).join(', ')} is editing the title` : "Click to edit"}
+                onClick={() => {
+                  if (titleEditingPeers.length === 0) {
+                    handleTitleEditStart()
+                  }
+                }}
+                style={{
+                  height: 32,
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '0 10px',
+                  borderRadius: 6,
+                  fontSize: 16,
+                  cursor: titleEditingPeers.length > 0 ? 'not-allowed' : 'text',
+                  minWidth: 120,
+                  maxWidth: 360,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  color: titleEditingPeers.length > 0 ? '#9ca3af' : '#1f2937',
+                  opacity: titleEditingPeers.length > 0 ? 0.7 : 1
+                }}
+              >
+                {canvasTitle || 'Untitled'}
+              </div>
+              {/* Show other users editing the title */}
+              {titleEditingPeers.length > 0 && (
+                <div style={{
+                  position: 'absolute',
+                  top: -8,
+                  right: -8,
+                  display: 'flex',
+                  gap: '2px'
+                }}>
+                  {titleEditingPeers.map((peer) => (
+                    <div
+                      key={peer.id}
+                      title={`${peer.name} is editing the title`}
+                      style={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: '50%',
+                        background: getPeerColor(peer.id),
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 8,
+                        fontWeight: 600,
+                        color: '#333',
+                        border: '1px solid #fff',
+                        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
+                      }}
+                    >
+                      {peer.initials}
+                    </div>
+                  ))}
                 </div>
-                {/* Show other users editing the title */}
-                {titleEditingPeers.length > 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    top: -8,
-                    right: -8,
-                    display: 'flex',
-                    gap: '2px'
-                  }}>
-                    {titleEditingPeers.map((peer) => (
-                      <div
-                        key={peer.id}
-                        title={`${peer.name} is editing the title`}
-                        style={{
-                          width: 16,
-                          height: 16,
-                          borderRadius: '50%',
-                          background: getPeerColor(peer.id),
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 8,
-                          fontWeight: 600,
-                          color: '#333',
-                          border: '1px solid #fff',
-                          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)'
-                        }}
-                      >
-                        {peer.initials}
-                      </div>
-                    ))}
-                  </div>
-                )}
+              )}
             </div>
           )}
         </div>
@@ -927,29 +927,29 @@ function Editor() {
           {connectedPeers.length === 0 ? (
             <span style={{ fontSize: '14px', color: '#9ca3af' }}>You are alone in this :(</span>
           ) : (
-              <div style={{ display: 'flex', gap: '6px' }}>
-                {connectedPeers.map((p) => (
-                  <div
-                    key={p.id || p.name}
-                    title={p.name}
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: '50%',
-                      background: getPeerColor(p.id || p.name),
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: '#333',
-                      border: '2px solid #fff',
-                      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-                    }}
-                  >
-                    {p.initials}
-                  </div>
-                ))}
+            <div style={{ display: 'flex', gap: '6px' }}>
+              {connectedPeers.map((p) => (
+                <div
+                  key={p.id || p.name}
+                  title={p.name}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    background: getPeerColor(p.id || p.name),
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: '#333',
+                    border: '2px solid #fff',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+                  }}
+                >
+                  {p.initials}
+                </div>
+              ))}
             </div>
           )}
         </div>
