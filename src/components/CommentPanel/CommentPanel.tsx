@@ -11,7 +11,7 @@ import {
   fetchCommentsAsync
 } from '../../store/canvasSlice'
 import type { AppDispatch } from '../../store/store'
-import { selectCommentPersistenceInitialized, selectSavingComments, selectCommentPersistenceError, selectUsersList } from '../../store/selectors'
+import { selectCommentPersistenceInitialized, selectSavingComments, selectUsersList } from '../../store/selectors'
 import './CommentPanel.css'
 
 interface CommentPanelProps {
@@ -30,7 +30,6 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
   // Redux state for comment persistence
   const isInitialized = useSelector(selectCommentPersistenceInitialized)
   const savingComments = useSelector(selectSavingComments)
-  const persistenceError = useSelector(selectCommentPersistenceError)
   const users = useSelector(selectUsersList)
 
   // Convert users from store to mention format
@@ -307,7 +306,7 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
           <div className="comment-input">
             <MentionsInput
               value={newComment}
-              onChange={(e: any, v: string) => setNewComment(v)}
+              onChange={(_: any, v: string) => setNewComment(v)}
               placeholder={isConnected ? 'Add a comment' : 'Connecting...'}
               disabled={!isConnected}
               className="mentions"
@@ -319,7 +318,7 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
                 trigger="@"
                 data={mentionUsers}
                 markup="@[__display__](__id__)"
-                displayTransform={(id: string, display: string) => `@${display}`}
+                displayTransform={(_id: string, display: string) => `@${display}`}
                 className="mentions__mention"
               />
             </MentionsInput>
