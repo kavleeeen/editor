@@ -136,7 +136,7 @@ function Editor() {
 
       await updateCanvas(id, {
         designData,
-        metadata: { title: canvasTitle || 'Untitled' },
+        metadata: { title: canvasTitle },
         imageUrl
       })
     } catch (e) {
