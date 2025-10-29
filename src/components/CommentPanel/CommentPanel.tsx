@@ -147,14 +147,14 @@ export default function CommentPanel({ canvasId }: CommentPanelProps) {
       text: newComment.trim()
     }
 
-    // Add comment to Yjs array first (for immediate UI update)
-    yComments.push([comment])
-    setNewComment('')
-
-    // Save to backend using async thunk
+    // Save to backend first, before adding to Yjs
     if (!savingComments.includes(comment.id)) {
       try {
         await dispatch(createCommentAsync({ canvasId, comment })).unwrap()
+
+        // Only add to Yjs after successful save
+        yComments.push([comment])
+        setNewComment('')
       } catch (error) {
         console.error('Failed to save comment:', error)
         dispatch(setCommentPersistenceError('Failed to save comment'))
